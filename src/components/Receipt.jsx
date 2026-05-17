@@ -109,8 +109,8 @@ export function printReceipt(order) {
 <body>
     <div class="center">
         <div class="store-name">LAWANG SEWU</div>
-        <div class="store-info">Jl. Contoh No. 123, Semarang</div>
-        <div class="store-info">Telp: 0812-3456-7890</div>
+        <div class="store-info">Jl. Puri Indah Jatinangor No.9 Blok B4, Cikeruh, Jatinangor, Sumedang, Jawa Barat</div>
+        <div class="store-info">Telp: 0822 8133 6269</div>
     </div>
 
     <div class="divider"></div>
