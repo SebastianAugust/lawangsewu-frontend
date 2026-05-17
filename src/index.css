@@ -1,0 +1,149 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
+
+/* ───── Warm Indonesian palette: copper, terracotta, cream ─────
+   Amber/orange/stone Tailwind utilities are remapped so existing
+   bg-amber-500, text-amber-700, bg-stone-50, etc. inherit the new feel
+   without touching every component. */
+@theme {
+    /* Honey / copper / terracotta — replaces amber */
+    --color-amber-50: #fbf3e2;
+    --color-amber-100: #f5e3c2;
+    --color-amber-200: #ebcb94;
+    --color-amber-300: #dba65f;
+    --color-amber-400: #c8843e;
+    --color-amber-500: #b06a2a;
+    --color-amber-600: #8f5121;
+    --color-amber-700: #6f3c1a;
+    --color-amber-800: #4f2811;
+    --color-amber-900: #321906;
+
+    /* Warm rust — replaces orange */
+    --color-orange-100: #f7d9c5;
+    --color-orange-200: #ecb893;
+    --color-orange-300: #d99366;
+    --color-orange-400: #c87447;
+    --color-orange-500: #b05933;
+    --color-orange-600: #8b3f22;
+    --color-orange-700: #6c2f17;
+
+    /* Cream / paper — replaces stone */
+    --color-stone-50: #fdf8f1;
+    --color-stone-100: #f5ecdb;
+    --color-stone-200: #e8d8b9;
+    --color-stone-300: #d6bd91;
+}
+
+:root {
+    --bg: #fbf6ec;
+    --paper: #fdfaf3;
+    --ink-900: #2d1b0e;
+    --ink-700: #4a3527;
+    --ink-500: #7a6657;
+}
+
+html,
+body {
+    font-family:
+        "Inter",
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        sans-serif;
+    font-feature-settings:
+        "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    background: var(--bg);
+    color: var(--ink-900);
+}
+
+.font-display {
+    font-family: "Lora", "Plus Jakarta Sans", Georgia, serif;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+}
+
+.font-serif-italic {
+    font-family: "Lora", Georgia, serif;
+    font-style: italic;
+}
+
+/* ───── Batik (Parang) motif utilities ─────
+   Subtle pattern: diagonal flowing strokes + small dots.
+   Use over solid backgrounds for a tactile, hand-printed feel. */
+.bg-batik-light {
+    background-color: #fdf8f1;
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg stroke='%239a5828' stroke-width='0.6' fill='none' stroke-linecap='round'%3E%3Cpath d='M0 40 Q10 30 20 20 Q30 10 40 0' opacity='0.18'/%3E%3Cpath d='M-20 20 Q-10 10 0 0 Q10 -10 20 -20' opacity='0.18'/%3E%3Cpath d='M20 60 Q30 50 40 40 Q50 30 60 20' opacity='0.18'/%3E%3Ccircle cx='10' cy='30' r='1.6' fill='%239a5828' opacity='0.22'/%3E%3Ccircle cx='30' cy='10' r='1.6' fill='%239a5828' opacity='0.22'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.bg-batik-rich {
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg stroke='%23ffffff' stroke-width='0.7' fill='none' stroke-linecap='round'%3E%3Cpath d='M0 40 Q10 30 20 20 Q30 10 40 0' opacity='0.18'/%3E%3Cpath d='M-20 20 Q-10 10 0 0 Q10 -10 20 -20' opacity='0.18'/%3E%3Cpath d='M20 60 Q30 50 40 40 Q50 30 60 20' opacity='0.18'/%3E%3Ccircle cx='10' cy='30' r='1.6' fill='%23ffffff' opacity='0.22'/%3E%3Ccircle cx='30' cy='10' r='1.6' fill='%23ffffff' opacity='0.22'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Batik divider — horizontal motif strip used as section accent */
+.batik-divider {
+    height: 8px;
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='8' viewBox='0 0 32 8'%3E%3Cg fill='%238f5121'%3E%3Cpath d='M0 4 Q4 0 8 4 Q12 8 16 4 Q20 0 24 4 Q28 8 32 4' fill='none' stroke='%238f5121' stroke-width='0.8'/%3E%3Ccircle cx='4' cy='4' r='0.8'/%3E%3Ccircle cx='12' cy='4' r='0.8'/%3E%3Ccircle cx='20' cy='4' r='0.8'/%3E%3Ccircle cx='28' cy='4' r='0.8'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: center;
+    opacity: 0.4;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #e9dcc7;
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #d6bd91;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+}
