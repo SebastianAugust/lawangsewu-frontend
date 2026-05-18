@@ -93,6 +93,7 @@ function OrderHistoryPage() {
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
+              data-tour="date-filter"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
@@ -103,7 +104,7 @@ function OrderHistoryPage() {
 
         {/* Stats */}
         {orders.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <div data-tour="order-summary" className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
             <div className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <ShoppingBag className="w-4 h-4 text-blue-500" />
@@ -156,7 +157,7 @@ function OrderHistoryPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div data-tour="order-list" className="space-y-2">
             {orders.map((order) => {
               const status = statusBadge(order.status);
               const StatusIcon = status.icon;

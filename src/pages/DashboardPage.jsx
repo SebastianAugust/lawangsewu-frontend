@@ -739,7 +739,7 @@ function DashboardPage() {
 
       {/* ============ DAILY TAB ============ */}
       {tab === "daily" && (
-        <>
+        <div data-tour="dashboard-content">
           <div className="flex flex-wrap items-center gap-2 mb-5">
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -979,7 +979,7 @@ function DashboardPage() {
               </div>
             </>
           )}
-        </>
+        </div>
       )}
 
       {/* ============ WEEKLY TAB ============ */}

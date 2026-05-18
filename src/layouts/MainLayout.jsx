@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Coffee,
+  HelpCircle,
 } from "lucide-react";
 
 function MainLayout({ children }) {
@@ -99,6 +100,14 @@ function MainLayout({ children }) {
                 </p>
               </div>
             </div>
+            <button
+              onClick={() => window.dispatchEvent(new Event("app:start-tour"))}
+              title="Mulai Tutorial"
+              className="flex items-center gap-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition text-sm px-3 py-2 rounded-lg font-medium"
+            >
+              <HelpCircle className="w-4 h-4" strokeWidth={2.2} />
+              <span className="hidden sm:inline">Tutorial</span>
+            </button>
             <button
               onClick={handleLogout}
               title="Logout"

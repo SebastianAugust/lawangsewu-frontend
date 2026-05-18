@@ -576,7 +576,7 @@ function CashierPage() {
         {/* LEFT — Menu */}
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1">
+            <div data-tour="search-menu" className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
@@ -591,7 +591,7 @@ function CashierPage() {
             </div>
           </div>
 
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
+          <div data-tour="category-filter" className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
             <button
               onClick={() => setSelectedCategory(null)}
               className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition ${
@@ -617,7 +617,7 @@ function CashierPage() {
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-1 -mr-1 pb-24 lg:pb-0">
+          <div data-tour="menu-grid" className="flex-1 overflow-y-auto pr-1 -mr-1 pb-24 lg:pb-0">
             {menusByCategory.length === 0 ? (
               <div className="text-center py-16">
                 <UtensilsCrossed className="w-12 h-12 text-slate-200 mx-auto mb-3" />
@@ -753,6 +753,7 @@ function CashierPage() {
 
         {/* RIGHT — Cart (inline on lg+, drawer on <lg) */}
         <aside
+          data-tour="cart"
           className={`bg-white border border-slate-200/70 flex flex-col overflow-hidden transition-transform duration-200 ease-out
             lg:static lg:w-[360px] xl:w-[380px] lg:rounded-2xl lg:shadow-sm lg:translate-x-0
             fixed inset-y-0 right-0 z-50 w-full max-w-md shadow-2xl
@@ -913,6 +914,7 @@ function CashierPage() {
               <div className="relative mb-3">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
+                  data-tour="customer-name"
                   type="text"
                   placeholder="Nama pelanggan (opsional)"
                   value={customerName}
@@ -931,6 +933,7 @@ function CashierPage() {
                 </div>
               </div>
               <button
+                data-tour="pay-button"
                 onClick={handleProceedToPayment}
                 className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
               >

@@ -465,7 +465,7 @@ function MenuManagePage() {
 
       {/* Table — visible on lg+ */}
       {filteredMenus.length > 0 && (
-        <div className="hidden lg:block bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+        <div data-tour="menu-table" className="hidden lg:block bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
           <table className="w-full">
             <thead className="bg-stone-50">
               <tr>
