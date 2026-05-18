@@ -41,6 +41,7 @@ function OrderHistoryPage() {
       setVoidReason("");
       loadOrders();
       alert("Permintaan void dikirim ke owner");
+      window.dispatchEvent(new Event("app:void-submitted"));
     } catch (err) {
       alert(err.response?.data?.message || "Gagal mengirim permintaan void");
     }
@@ -175,7 +176,13 @@ function OrderHistoryPage() {
                 >
                   <div
                     className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-stone-50/50 transition"
-                    onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                    onClick={() => {
+                      const willExpand = !isExpanded;
+                      setExpandedOrder(isExpanded ? null : order.id);
+                      if (willExpand) {
+                        window.dispatchEvent(new Event("app:order-expanded"));
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center shrink-0">
@@ -296,7 +303,7 @@ function OrderHistoryPage() {
                             Cetak Ulang Struk
                           </button>
                           {voidOrderId === order.id ? (
-                            <div className="flex gap-2 items-center w-full sm:w-auto">
+                            <div data-tour="void-form" className="flex gap-2 items-center w-full sm:w-auto">
                               <input
                                 type="text"
                                 placeholder="Tulis alasan void..."
@@ -323,7 +330,11 @@ function OrderHistoryPage() {
                             </div>
                           ) : (
                             <button
-                              onClick={() => setVoidOrderId(order.id)}
+                              data-tour="void-request-btn"
+                              onClick={() => {
+                                setVoidOrderId(order.id);
+                                window.dispatchEvent(new Event("app:void-modal-opened"));
+                              }}
                               className="flex items-center gap-1.5 text-rose-500 hover:text-rose-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-rose-50 transition"
                             >
                               <Ban className="w-3.5 h-3.5" />

@@ -10,12 +10,14 @@ import {
   Coffee,
   HelpCircle,
 } from "lucide-react";
+import { useTour } from "../contexts/TourContext";
 
 function MainLayout({ children }) {
   const role = localStorage.getItem("role");
   const userName = localStorage.getItem("userName");
   const navigate = useNavigate();
   const location = useLocation();
+  const { start: startTour } = useTour();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -67,6 +69,7 @@ function MainLayout({ children }) {
                       key={link.to}
                       to={link.to}
                       title={link.label}
+                      data-tour={`nav-${link.to.replace("/", "") || "kasir"}`}
                       className={`relative flex items-center gap-2 px-2.5 lg:px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
                         active
                           ? "text-slate-900 bg-slate-100"
@@ -101,7 +104,7 @@ function MainLayout({ children }) {
               </div>
             </div>
             <button
-              onClick={() => window.dispatchEvent(new Event("app:start-tour"))}
+              onClick={startTour}
               title="Mulai Tutorial"
               className="flex items-center gap-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition text-sm px-3 py-2 rounded-lg font-medium"
             >

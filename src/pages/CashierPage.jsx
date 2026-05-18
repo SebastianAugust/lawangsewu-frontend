@@ -43,6 +43,7 @@ function CashierPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [cashReceived, setCashReceived] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const [lastOrder, setLastOrder] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
@@ -50,6 +51,15 @@ function CashierPage() {
   useEffect(() => {
     getMenus().then((res) => setMenus(res.data));
     getCategories().then((res) => setCategories(res.data));
+  }, []);
+
+  // Tour control: listen for "close receipt" instruction from GuidedTour
+  // (step Struk advances). Lets the tour close the modal so user can
+  // proceed to the navbar.
+  useEffect(() => {
+    const handler = () => setShowReceipt(false);
+    window.addEventListener("app:close-receipt", handler);
+    return () => window.removeEventListener("app:close-receipt", handler);
   }, []);
 
   const filteredMenus = menus.filter((m) => {
@@ -87,6 +97,7 @@ function CashierPage() {
     setActiveMenu(menu);
     setInputQty(1);
     setInputVariant(menu.variants?.length > 0 ? menu.variants[0] : null);
+    window.dispatchEvent(new Event("app:menu-clicked"));
   };
 
   const handleAddToCart = () => {
@@ -127,6 +138,7 @@ function CashierPage() {
     setActiveMenu(null);
     setInputQty(1);
     setInputVariant(null);
+    window.dispatchEvent(new Event("app:added-to-cart"));
   };
 
   const handleStartEdit = (item) => {
@@ -211,9 +223,12 @@ function CashierPage() {
     setShowConfirmation(true);
     setPaymentMethod("cash");
     setCashReceived("");
+    window.dispatchEvent(new Event("app:pay-clicked"));
   };
 
   const handleSubmitOrder = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     try {
       const orderData = {
         customer_name: customerName || null,
@@ -269,8 +284,11 @@ function CashierPage() {
           : "Pesanan berhasil disimpan!",
       );
       setTimeout(() => setSuccess(""), 3000);
+      window.dispatchEvent(new Event("app:order-created"));
     } catch {
       alert("Gagal menyimpan pesanan");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -310,7 +328,7 @@ function CashierPage() {
       {/* RECEIPT MODAL */}
       {showReceipt && lastOrder && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-slide-up">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+          <div data-tour="receipt-modal" className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
             <div className="bg-gradient-to-br from-amber-700 via-orange-700 to-amber-900 p-6 text-center text-white relative overflow-hidden">
               <div className="absolute inset-0 bg-batik-rich opacity-40" />
               <button
@@ -404,7 +422,7 @@ function CashierPage() {
       {/* CONFIRMATION MODAL */}
       {showConfirmation && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-slide-up">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+          <div data-tour="payment-modal" className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
             <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-slate-100">
               <div>
                 <h3 className="font-display text-lg font-bold text-slate-900">
@@ -522,15 +540,19 @@ function CashierPage() {
                   Batal
                 </button>
                 <button
+                  data-tour="payment-confirm"
                   onClick={handleSubmitOrder}
-                  disabled={!canSubmit}
-                  className={`flex-1 py-3 rounded-xl font-semibold transition shadow-sm ${
-                    canSubmit
+                  disabled={!canSubmit || submitting}
+                  className={`flex-1 py-3 rounded-xl font-semibold transition shadow-sm flex items-center justify-center gap-2 ${
+                    canSubmit && !submitting
                       ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-500/20"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                      : "bg-slate-300 text-slate-500 cursor-not-allowed"
                   }`}
                 >
-                  Konfirmasi Bayar
+                  {submitting && (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )}
+                  {submitting ? "Memproses..." : "Konfirmasi Bayar"}
                 </button>
               </div>
             </div>
@@ -681,7 +703,7 @@ function CashierPage() {
                             </button>
 
                             {isMenuActive && (
-                              <div className="bg-white border border-amber-200 rounded-2xl shadow-xl shadow-amber-500/10 mt-2 p-4 animate-[fadeIn_0.15s_ease-out]">
+                              <div data-tour="menu-active-panel" className="bg-white border border-amber-200 rounded-2xl shadow-xl shadow-amber-500/10 mt-2 p-4 animate-[fadeIn_0.15s_ease-out]">
                                 {menu.variants?.length > 0 && (
                                   <div className="mb-3">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -918,7 +940,12 @@ function CashierPage() {
                   type="text"
                   placeholder="Nama pelanggan (opsional)"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    if (e.target.value.trim().length > 0) {
+                      window.dispatchEvent(new Event("app:customer-name-entered"));
+                    }
+                  }}
                   className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition"
                 />
               </div>
