@@ -1,92 +1,107 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Sans:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap");
 
-/* ───── Warm Indonesian palette: copper, terracotta, cream ─────
-   Amber/orange/stone Tailwind utilities are remapped so existing
-   bg-amber-500, text-amber-700, bg-stone-50, etc. inherit the new feel
-   without touching every component. */
+/* ───── Corporate banking palette: navy, sky, neutral gray ─────
+   Existing components reference amber/orange/stone Tailwind utilities.
+   We remap those tokens so the whole app picks up the new look without
+   touching every className. */
 @theme {
-    /* Honey / copper / terracotta — replaces amber */
-    --color-amber-50: #fbf3e2;
-    --color-amber-100: #f5e3c2;
-    --color-amber-200: #ebcb94;
-    --color-amber-300: #dba65f;
-    --color-amber-400: #c8843e;
-    --color-amber-500: #b06a2a;
-    --color-amber-600: #8f5121;
-    --color-amber-700: #6f3c1a;
-    --color-amber-800: #4f2811;
-    --color-amber-900: #321906;
+    /* Navy / blue — replaces amber (primary accent) */
+    --color-amber-50: #eff6ff;
+    --color-amber-100: #dbeafe;
+    --color-amber-200: #bfdbfe;
+    --color-amber-300: #93c5fd;
+    --color-amber-400: #3b82f6;
+    --color-amber-500: #1d4ed8;
+    --color-amber-600: #1e40af;
+    --color-amber-700: #1e3a8a;
+    --color-amber-800: #172554;
+    --color-amber-900: #0b1739;
 
-    /* Warm rust — replaces orange */
-    --color-orange-100: #f7d9c5;
-    --color-orange-200: #ecb893;
-    --color-orange-300: #d99366;
-    --color-orange-400: #c87447;
-    --color-orange-500: #b05933;
-    --color-orange-600: #8b3f22;
-    --color-orange-700: #6c2f17;
+    /* Sky — replaces orange (secondary highlight) */
+    --color-orange-100: #e0f2fe;
+    --color-orange-200: #bae6fd;
+    --color-orange-300: #7dd3fc;
+    --color-orange-400: #38bdf8;
+    --color-orange-500: #0284c7;
+    --color-orange-600: #0369a1;
+    --color-orange-700: #075985;
 
-    /* Cream / paper — replaces stone */
-    --color-stone-50: #fdf8f1;
-    --color-stone-100: #f5ecdb;
-    --color-stone-200: #e8d8b9;
-    --color-stone-300: #d6bd91;
+    /* Cool neutral — replaces warm stone */
+    --color-stone-50: #f8fafc;
+    --color-stone-100: #f1f5f9;
+    --color-stone-200: #e2e8f0;
+    --color-stone-300: #cbd5e1;
+
+    /* Tighter corner radii for a sharper, institutional feel */
+    --radius-md: 0.25rem;
+    --radius-lg: 0.375rem;
+    --radius-xl: 0.5rem;
+    --radius-2xl: 0.625rem;
+    --radius-3xl: 0.75rem;
 }
 
 :root {
-    --bg: #fbf6ec;
-    --paper: #fdfaf3;
-    --ink-900: #2d1b0e;
-    --ink-700: #4a3527;
-    --ink-500: #7a6657;
+    --bg: #f8fafc;
+    --paper: #ffffff;
+    --ink-900: #0f172a;
+    --ink-700: #334155;
+    --ink-500: #64748b;
 }
 
 html,
 body {
     font-family:
         "Inter",
+        -apple-system,
+        "Segoe UI",
         ui-sans-serif,
         system-ui,
-        -apple-system,
         sans-serif;
     font-feature-settings:
-        "cv02", "cv03", "cv04", "cv11";
+        "cv02", "cv03", "cv04", "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     background: var(--bg);
     color: var(--ink-900);
+    letter-spacing: -0.005em;
 }
 
 .font-display {
-    font-family: "Lora", "Plus Jakarta Sans", Georgia, serif;
-    letter-spacing: -0.01em;
+    font-family:
+        "IBM Plex Sans",
+        "Inter",
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+    letter-spacing: -0.025em;
     font-weight: 700;
 }
 
-.font-serif-italic {
-    font-family: "Lora", Georgia, serif;
-    font-style: italic;
+.font-mono {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+    font-feature-settings: "ss01";
 }
 
-/* ───── Batik (Parang) motif utilities ─────
-   Subtle pattern: diagonal flowing strokes + small dots.
-   Use over solid backgrounds for a tactile, hand-printed feel. */
+.font-serif-italic {
+    font-family: "IBM Plex Sans", "Inter", sans-serif;
+    font-style: normal;
+    font-weight: 500;
+}
+
+/* ───── Batik utilities (kept for backward compat — neutralized for
+   corporate look). Future cleanup can remove these classes entirely. */
 .bg-batik-light {
-    background-color: #fdf8f1;
-    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg stroke='%239a5828' stroke-width='0.6' fill='none' stroke-linecap='round'%3E%3Cpath d='M0 40 Q10 30 20 20 Q30 10 40 0' opacity='0.18'/%3E%3Cpath d='M-20 20 Q-10 10 0 0 Q10 -10 20 -20' opacity='0.18'/%3E%3Cpath d='M20 60 Q30 50 40 40 Q50 30 60 20' opacity='0.18'/%3E%3Ccircle cx='10' cy='30' r='1.6' fill='%239a5828' opacity='0.22'/%3E%3Ccircle cx='30' cy='10' r='1.6' fill='%239a5828' opacity='0.22'/%3E%3C/g%3E%3C/svg%3E");
+    background-color: #f1f5f9;
 }
 
 .bg-batik-rich {
-    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg stroke='%23ffffff' stroke-width='0.7' fill='none' stroke-linecap='round'%3E%3Cpath d='M0 40 Q10 30 20 20 Q30 10 40 0' opacity='0.18'/%3E%3Cpath d='M-20 20 Q-10 10 0 0 Q10 -10 20 -20' opacity='0.18'/%3E%3Cpath d='M20 60 Q30 50 40 40 Q50 30 60 20' opacity='0.18'/%3E%3Ccircle cx='10' cy='30' r='1.6' fill='%23ffffff' opacity='0.22'/%3E%3Ccircle cx='30' cy='10' r='1.6' fill='%23ffffff' opacity='0.22'/%3E%3C/g%3E%3C/svg%3E");
+    background-color: transparent;
 }
 
-/* Batik divider — horizontal motif strip used as section accent */
 .batik-divider {
-    height: 8px;
-    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='8' viewBox='0 0 32 8'%3E%3Cg fill='%238f5121'%3E%3Cpath d='M0 4 Q4 0 8 4 Q12 8 16 4 Q20 0 24 4 Q28 8 32 4' fill='none' stroke='%238f5121' stroke-width='0.8'/%3E%3Ccircle cx='4' cy='4' r='0.8'/%3E%3Ccircle cx='12' cy='4' r='0.8'/%3E%3Ccircle cx='20' cy='4' r='0.8'/%3E%3Ccircle cx='28' cy='4' r='0.8'/%3E%3C/g%3E%3C/svg%3E");
-    background-repeat: repeat-x;
-    background-position: center;
-    opacity: 0.4;
+    height: 1px;
+    background: #e2e8f0;
+    background-repeat: no-repeat;
 }
 
 @keyframes fadeIn {
@@ -103,7 +118,7 @@ body {
 @keyframes slideUp {
     from {
         opacity: 0;
-        transform: translateY(12px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
@@ -121,22 +136,23 @@ body {
 }
 
 .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
+    animation: slideUp 0.25s ease-out;
 }
 
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
 }
 ::-webkit-scrollbar-track {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: #e9dcc7;
-    border-radius: 8px;
+    background: #cbd5e1;
+    border-radius: 6px;
+    border: 2px solid #f8fafc;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #d6bd91;
+    background: #94a3b8;
 }
 
 input[type="number"]::-webkit-inner-spin-button,
@@ -146,4 +162,9 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] {
     -moz-appearance: textfield;
+}
+
+/* Tabular numerals everywhere they matter for financial display */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
 }

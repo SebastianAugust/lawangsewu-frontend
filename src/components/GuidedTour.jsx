@@ -87,8 +87,9 @@ const TOUR_STEPS = [
     target: '[data-tour="payment-modal"]',
     placement: "left",
     content:
-      "Pilih metode pembayaran. Untuk Cash, masukkan jumlah uang yang diterima — tombol cepat tersedia untuk nominal umum.",
-    mode: "info",
+      "Pilih salah satu metode pembayaran. Jika Cash, masukkan jumlah uang yang diterima (akan otomatis terisi).",
+    mode: "wait",
+    waitFor: "app:payment-method-selected",
   },
   {
     page: "/",
@@ -104,9 +105,9 @@ const TOUR_STEPS = [
     target: '[data-tour="receipt-modal"]',
     placement: "left",
     content:
-      "Struk pesanan muncul di sini. Kamu bisa cetak struk atau tutup. Klik Lanjut untuk menutup struk dan lanjut tutorial.",
-    mode: "info",
-    onAdvance: "app:close-receipt",
+      "Struk pesanan muncul di sini. Kamu bisa klik 'Cetak Struk' untuk mencetak. Klik 'Tutup' untuk melanjutkan tutorial.",
+    mode: "wait",
+    waitFor: "app:receipt-closed",
   },
   {
     page: "/",
@@ -231,7 +232,9 @@ function GuidedTour() {
       "app:added-to-cart",
       "app:customer-name-entered",
       "app:pay-clicked",
+      "app:payment-method-selected",
       "app:order-created",
+      "app:receipt-closed",
       "app:order-expanded",
       "app:void-modal-opened",
       "app:void-submitted",

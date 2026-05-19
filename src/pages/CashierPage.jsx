@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getMenus, getCategories } from "../api/menu";
 import { createOrder, getOrders } from "../api/order";
 import { BASE_URL } from "../api/axios";
@@ -53,14 +53,16 @@ function CashierPage() {
     getCategories().then((res) => setCategories(res.data));
   }, []);
 
-  // Tour control: listen for "close receipt" instruction from GuidedTour
-  // (step Struk advances). Lets the tour close the modal so user can
-  // proceed to the navbar.
+  // Tour observation: dispatch `app:receipt-closed` when user closes the
+  // receipt modal (true → false transition). Used by the tutorial to
+  // advance from the receipt step.
+  const prevShowReceiptRef = useRef(false);
   useEffect(() => {
-    const handler = () => setShowReceipt(false);
-    window.addEventListener("app:close-receipt", handler);
-    return () => window.removeEventListener("app:close-receipt", handler);
-  }, []);
+    if (prevShowReceiptRef.current && !showReceipt) {
+      window.dispatchEvent(new Event("app:receipt-closed"));
+    }
+    prevShowReceiptRef.current = showReceipt;
+  }, [showReceipt]);
 
   const filteredMenus = menus.filter((m) => {
     const matchCategory = selectedCategory ? m.category_id === selectedCategory : true;
@@ -473,7 +475,20 @@ function CashierPage() {
                   return (
                     <button
                       key={method.value}
-                      onClick={() => setPaymentMethod(method.value)}
+                      onClick={() => {
+                        setPaymentMethod(method.value);
+                        // Tutorial helper: auto-fill cash with exact total so
+                        // the "Konfirmasi Bayar" button activates immediately
+                        // and the user can proceed without typing nominal.
+                        if (
+                          method.value === "cash" &&
+                          window.__TOUR_MODE__ &&
+                          totalPrice > 0
+                        ) {
+                          setCashReceived(String(totalPrice));
+                        }
+                        window.dispatchEvent(new Event("app:payment-method-selected"));
+                      }}
                       className={`relative py-3 px-2 rounded-xl text-sm font-semibold transition border-2 flex flex-col items-center gap-1.5 ${
                         active
                           ? "border-amber-500 bg-amber-50 text-amber-700 shadow-sm shadow-amber-500/10"

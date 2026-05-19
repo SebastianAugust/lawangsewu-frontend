@@ -49,7 +49,7 @@ import {
   Clock,
 } from "lucide-react";
 
-const COLORS = ["#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#ef4444"];
+const COLORS = ["#1e40af", "#0d9488", "#7c3aed", "#0284c7", "#be123c", "#475569"];
 const DAYS_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
 function VariantBreakdownGrid({ data, formatRupiah }) {
@@ -771,9 +771,9 @@ function DashboardPage() {
 
           {dailyReport && (
             <>
-              <div className="bg-batik-light border border-amber-700/20 rounded-xl p-5 mb-6 flex items-start gap-3 relative overflow-hidden">
-                <div className="w-9 h-9 bg-amber-500/15 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-amber-500/20">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
+              <div className="bg-white border border-slate-200 border-l-4 border-l-blue-900 rounded-md p-4 mb-6 flex items-start gap-3">
+                <div className="w-9 h-9 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-blue-900" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
@@ -850,8 +850,8 @@ function DashboardPage() {
                     >
                       <defs>
                         <linearGradient id="dailyBarGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.55} />
+                          <stop offset="0%" stopColor="#1e40af" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#1e40af" stopOpacity={0.55} />
                         </linearGradient>
                         <linearGradient id="dailyRevArea" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
@@ -887,7 +887,7 @@ function DashboardPage() {
                         width={36}
                       />
                       <Tooltip
-                        cursor={{ fill: "rgba(245,158,11,0.06)" }}
+                        cursor={{ fill: "rgba(30,64,175,0.06)" }}
                         content={
                           <ChartTooltip
                             valueFormatter={(val, name) =>
@@ -1026,9 +1026,9 @@ function DashboardPage() {
 
           {weeklyReport && !weeklyLoading && (
             <>
-              <div className="bg-batik-light border border-amber-700/20 rounded-xl p-5 mb-6 flex items-start gap-3 relative overflow-hidden">
-                <div className="w-9 h-9 bg-amber-500/15 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-amber-500/20">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
+              <div className="bg-white border border-slate-200 border-l-4 border-l-blue-900 rounded-md p-4 mb-6 flex items-start gap-3">
+                <div className="w-9 h-9 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-blue-900" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
@@ -1095,8 +1095,8 @@ function DashboardPage() {
                     <ComposedChart data={weeklyChartData}>
                       <defs>
                         <linearGradient id="weekBarGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.55} />
+                          <stop offset="0%" stopColor="#1e40af" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#1e40af" stopOpacity={0.55} />
                         </linearGradient>
                         <linearGradient id="weekRevArea" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
@@ -1132,7 +1132,7 @@ function DashboardPage() {
                         width={32}
                       />
                       <Tooltip
-                        cursor={{ fill: "rgba(245,158,11,0.06)" }}
+                        cursor={{ fill: "rgba(30,64,175,0.06)" }}
                         content={
                           <ChartTooltip
                             labelFormatter={(label, items) =>
@@ -1193,8 +1193,8 @@ function DashboardPage() {
                     >
                       <defs>
                         <linearGradient id="weekHourBar" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.5} />
+                          <stop offset="0%" stopColor="#0d9488" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#0d9488" stopOpacity={0.5} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid
@@ -1217,7 +1217,7 @@ function DashboardPage() {
                         width={32}
                       />
                       <Tooltip
-                        cursor={{ fill: "rgba(139,92,246,0.08)" }}
+                        cursor={{ fill: "rgba(13,148,136,0.08)" }}
                         content={
                           <ChartTooltip
                             valueFormatter={(val, name) =>
@@ -1338,9 +1338,9 @@ function DashboardPage() {
 
           {monthlyReport && (
             <>
-              <div className="bg-batik-light border border-amber-700/20 rounded-xl p-5 mb-6 flex items-start gap-3 relative overflow-hidden">
-                <div className="w-9 h-9 bg-amber-500/15 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-amber-500/20">
-                  <Sparkles className="w-4 h-4 text-amber-600" />
+              <div className="bg-white border border-slate-200 border-l-4 border-l-blue-900 rounded-md p-4 mb-6 flex items-start gap-3">
+                <div className="w-9 h-9 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-blue-900" />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
@@ -1477,8 +1477,8 @@ function DashboardPage() {
                     >
                       <defs>
                         <linearGradient id="monthHourBar" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.5} />
+                          <stop offset="0%" stopColor="#0d9488" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#0d9488" stopOpacity={0.5} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid
@@ -1501,7 +1501,7 @@ function DashboardPage() {
                         width={32}
                       />
                       <Tooltip
-                        cursor={{ fill: "rgba(139,92,246,0.08)" }}
+                        cursor={{ fill: "rgba(13,148,136,0.08)" }}
                         content={
                           <ChartTooltip
                             valueFormatter={(val, name) =>
