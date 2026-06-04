@@ -5,6 +5,7 @@ import {
   getMonthlyReport,
   getWeekRange,
 } from "../api/report";
+import { getBranches } from "../api/branch";
 import {
   exportDailyPdf,
   exportDailyXlsx,
@@ -47,6 +48,8 @@ import {
   CalendarDays,
   Layers,
   Clock,
+  Store,
+  ChevronDown,
 } from "lucide-react";
 
 const COLORS = ["#1e40af", "#0d9488", "#7c3aed", "#0284c7", "#be123c", "#475569"];
@@ -488,6 +491,79 @@ function TopMenusTable({ data, formatRupiah, title = "Menu Terjual", subtitle })
   );
 }
 
+// Owner-only "Semua Cabang" view: side-by-side comparison of each cabang's
+// total revenue & orders for the active period. Rendered above the aggregate
+// stat cards; hidden when a single cabang is selected.
+function BranchComparison({ data, formatRupiah }) {
+  if (!data || data.length === 0) return null;
+
+  const topRevenue = Math.max(...data.map((b) => Number(b.revenue) || 0), 1);
+
+  return (
+    <div className="mb-6">
+      <div className="flex items-center gap-2 mb-3">
+        <Store className="w-4 h-4 text-slate-400" />
+        <h4 className="font-display font-bold text-slate-900">
+          Perbandingan Cabang
+        </h4>
+        <span className="text-xs text-slate-400">— periode terpilih</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {data.map((b, i) => {
+          const revenue = Number(b.revenue) || 0;
+          const share = (revenue / topRevenue) * 100;
+          const accent = COLORS[i % COLORS.length];
+          return (
+            <div
+              key={b.branch_id}
+              className="bg-white p-5 rounded-2xl border border-slate-200/70 shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: accent }}
+                  />
+                  <p className="font-semibold text-slate-900 truncate">
+                    {b.branch_name}
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                  Cabang
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+                    Pendapatan
+                  </p>
+                  <p className="font-display text-xl font-bold text-slate-900 mt-1 tabular-nums">
+                    {formatRupiah(revenue)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
+                    Pesanan
+                  </p>
+                  <p className="font-display text-xl font-bold text-slate-900 mt-1 tabular-nums">
+                    {Number(b.orders) || 0}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="h-1.5 rounded-full transition-all duration-500"
+                  style={{ width: `${share}%`, backgroundColor: accent }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function DashboardPage() {
   const [dailyReport, setDailyReport] = useState(null);
   const [weeklyReport, setWeeklyReport] = useState(null);
@@ -498,22 +574,31 @@ function DashboardPage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [tab, setTab] = useState("daily");
   const [weeklyLoading, setWeeklyLoading] = useState(false);
+  // Branch selector (owner-only page). "" = Semua Cabang (all branches).
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const isAllBranches = selectedBranch === "";
+  const branchParam = selectedBranch || undefined;
+
+  useEffect(() => {
+    getBranches().then((res) => setBranches(res.data));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    getDailyReport(date).then((res) => {
+    getDailyReport(date, branchParam).then((res) => {
       if (!cancelled) setDailyReport(res.data);
     });
     return () => {
       cancelled = true;
     };
-  }, [date]);
+  }, [date, branchParam]);
 
   useEffect(() => {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setWeeklyLoading(true);
-    getWeeklyReport(weekDate)
+    getWeeklyReport(weekDate, branchParam)
       .then((res) => {
         if (cancelled) return;
         setWeeklyReport(res.data);
@@ -524,17 +609,17 @@ function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [weekDate]);
+  }, [weekDate, branchParam]);
 
   useEffect(() => {
     let cancelled = false;
-    getMonthlyReport(month, year).then((res) => {
+    getMonthlyReport(month, year, branchParam).then((res) => {
       if (!cancelled) setMonthlyReport(res.data);
     });
     return () => {
       cancelled = true;
     };
-  }, [month, year]);
+  }, [month, year, branchParam]);
 
   const formatRupiah = (num) => `Rp ${Number(num).toLocaleString("id-ID")}`;
   const formatRupiahShort = (num) => {
@@ -715,25 +800,44 @@ function DashboardPage() {
             Pantau performa restoran Anda secara real-time.
           </p>
         </div>
-        <div className="inline-flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.value;
-            return (
-              <button
-                key={t.value}
-                onClick={() => setTab(t.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${
-                  active
-                    ? "bg-slate-900 text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {t.label}
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Branch selector — owner picks one cabang or "Semua Cabang". */}
+          <div className="relative">
+            <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+            <select
+              value={selectedBranch}
+              onChange={(e) => setSelectedBranch(e.target.value)}
+              className="bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition appearance-none"
+            >
+              <option value="">Semua Cabang</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          </div>
+          <div className="inline-flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              const active = tab === t.value;
+              return (
+                <button
+                  key={t.value}
+                  onClick={() => setTab(t.value)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${
+                    active
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -782,6 +886,13 @@ function DashboardPage() {
                   <p className="text-sm text-slate-700 leading-relaxed">{dailySummary()}</p>
                 </div>
               </div>
+
+              {isAllBranches && (
+                <BranchComparison
+                  data={dailyReport.branch_breakdown}
+                  formatRupiah={formatRupiah}
+                />
+              )}
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
@@ -1037,6 +1148,13 @@ function DashboardPage() {
                   <p className="text-sm text-slate-700 leading-relaxed">{weeklySummary()}</p>
                 </div>
               </div>
+
+              {isAllBranches && (
+                <BranchComparison
+                  data={weeklyReport.branch_breakdown}
+                  formatRupiah={formatRupiah}
+                />
+              )}
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
@@ -1349,6 +1467,13 @@ function DashboardPage() {
                   <p className="text-sm text-slate-700 leading-relaxed">{monthlySummary()}</p>
                 </div>
               </div>
+
+              {isAllBranches && (
+                <BranchComparison
+                  data={monthlyReport.branch_breakdown}
+                  formatRupiah={formatRupiah}
+                />
+              )}
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard

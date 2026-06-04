@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAuditLogs } from "../api/audit";
+import { getBranches } from "../api/branch";
 import MainLayout from "../layouts/MainLayout";
 import {
   LogIn,
@@ -18,6 +19,7 @@ import {
   ChevronRight,
   Inbox,
   Filter,
+  Store,
 } from "lucide-react";
 
 const ACTION_LABELS = {
@@ -87,16 +89,21 @@ const ACTION_LABELS = {
 };
 
 function AuditLogPage() {
+  const isOwner = localStorage.getItem("role") === "owner";
   const [logs, setLogs] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [filterAction, setFilterAction] = useState("");
   const [page, setPage] = useState(1);
   const [expandedLog, setExpandedLog] = useState(null);
+  // Branch filter is owner-only — a kasir's logs are scoped by the backend.
+  const [branches, setBranches] = useState([]);
+  const [branchId, setBranchId] = useState("");
 
   const loadLogs = () => {
     const params = { date, page };
     if (filterAction) params.action = filterAction;
+    if (isOwner && branchId) params.branch_id = branchId;
     getAuditLogs(params).then((res) => {
       setLogs(res.data.data);
       setPagination({
@@ -108,12 +115,18 @@ function AuditLogPage() {
   };
 
   useEffect(() => {
+    if (isOwner) {
+      getBranches().then((res) => setBranches(res.data));
+    }
+  }, [isOwner]);
+
+  useEffect(() => {
     loadLogs();
-  }, [date, filterAction, page]);
+  }, [date, filterAction, page, branchId]);
 
   useEffect(() => {
     setPage(1);
-  }, [date, filterAction]);
+  }, [date, filterAction, branchId]);
 
   const getActionLabel = (action) =>
     ACTION_LABELS[action] || {
@@ -147,6 +160,24 @@ function AuditLogPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {isOwner && (
+              <div className="relative">
+                <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <select
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition appearance-none"
+                >
+                  <option value="">Semua Cabang</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            )}
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <select

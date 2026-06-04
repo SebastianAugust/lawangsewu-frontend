@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   Building2,
+  Store,
   HelpCircle,
 } from "lucide-react";
 import { useTour } from "../contexts/TourContext";
@@ -15,6 +16,7 @@ import { useTour } from "../contexts/TourContext";
 function MainLayout({ children }) {
   const role = localStorage.getItem("role");
   const userName = localStorage.getItem("userName");
+  const branchName = localStorage.getItem("branch_name");
   const navigate = useNavigate();
   const location = useLocation();
   const { start: startTour } = useTour();
@@ -23,6 +25,8 @@ function MainLayout({ children }) {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     localStorage.removeItem("userName");
+    localStorage.removeItem("branch_id");
+    localStorage.removeItem("branch_name");
     navigate("/login");
   };
 
@@ -30,6 +34,7 @@ function MainLayout({ children }) {
     { to: "/", label: "Kasir", icon: ShoppingCart, roles: ["kasir", "owner"] },
     { to: "/orders", label: "Riwayat", icon: History, roles: ["kasir", "owner"] },
     { to: "/menus", label: "Menu", icon: UtensilsCrossed, roles: ["owner"] },
+    { to: "/branches", label: "Cabang", icon: Store, roles: ["owner"] },
     { to: "/void-requests", label: "Void", icon: Ban, roles: ["owner"] },
     { to: "/audit-log", label: "Audit", icon: ScrollText, roles: ["owner"] },
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["owner"] },
@@ -97,8 +102,14 @@ function MainLayout({ children }) {
                 <p className="text-sm font-semibold text-slate-900 leading-none">
                   {userName}
                 </p>
-                <p className="text-[10px] text-slate-500 capitalize mt-1 font-medium uppercase tracking-wider">
+                <p className="text-[10px] text-slate-500 mt-1 font-medium uppercase tracking-wider">
                   {role}
+                  {role === "kasir" && branchName ? (
+                    <span className="normal-case tracking-normal text-slate-400">
+                      {" · "}
+                      {branchName}
+                    </span>
+                  ) : null}
                 </p>
               </div>
             </div>

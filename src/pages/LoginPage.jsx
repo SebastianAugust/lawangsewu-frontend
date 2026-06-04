@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Coffee } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Building2 } from "lucide-react";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -21,6 +21,17 @@ function LoginPage() {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("role", response.data.user.role);
       localStorage.setItem("userName", response.data.user.name);
+      // Owner has no branch (branch_id null) → "lihat semua cabang".
+      // Kasir is bound to one cabang; persist it for the navbar + filters.
+      const branchId = response.data.branch_id ?? null;
+      const branchName = response.data.branch_name ?? null;
+      if (branchId != null) {
+        localStorage.setItem("branch_id", String(branchId));
+        localStorage.setItem("branch_name", branchName ?? "");
+      } else {
+        localStorage.removeItem("branch_id");
+        localStorage.removeItem("branch_name");
+      }
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login gagal. Periksa kembali email & password.");
@@ -30,37 +41,35 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-stone-50">
-      
-
-      {/* RIGHT — Login form */}
+    <div className="min-h-screen flex bg-slate-50">
       <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md animate-slide-up">
-          {/* Mobile-only logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-11 h-11 bg-amber-500 rounded-xl flex items-center justify-center">
-              <Coffee className="w-5 h-5 text-white" strokeWidth={2.5} />
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-10 h-10 bg-blue-900 rounded-md flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white" strokeWidth={2.2} />
             </div>
             <div>
-              <p className="font-display font-bold text-lg leading-none text-slate-900">
+              <p className="font-display font-bold text-base leading-none text-slate-900 tracking-tight">
                 Lawang Sewu
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">Restaurant POS</p>
+              <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-[0.14em] font-semibold">
+                Point of Sale
+              </p>
             </div>
           </div>
 
           <div className="mb-8">
-            <h2 className="font-display text-3xl font-bold text-slate-900 tracking-tight">
-              Selamat datang kembali
+            <h2 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
+              Masuk ke akun Anda
             </h2>
             <p className="text-sm text-slate-500 mt-2">
-              Masuk ke akun Anda untuk mulai mengelola transaksi.
+              Silakan masukkan kredensial untuk melanjutkan ke sistem.
             </p>
           </div>
 
           {error && (
-            <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 rounded-xl flex items-start gap-2">
-              <span className="font-medium">!</span>
+            <div className="mb-5 bg-red-50 border border-red-200 border-l-4 border-l-red-600 text-red-800 text-sm px-4 py-3 rounded flex items-start gap-2">
+              <span className="font-bold">!</span>
               <span>{error}</span>
             </div>
           )}
@@ -77,7 +86,7 @@ function LoginPage() {
                   placeholder="email@lawangsewu.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-4 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition"
+                  className="w-full bg-white border border-slate-300 rounded pl-11 pr-4 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/15 focus:border-blue-900 transition"
                   required
                 />
               </div>
@@ -94,7 +103,7 @@ function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-11 pr-11 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition"
+                  className="w-full bg-white border border-slate-300 rounded pl-11 pr-11 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/15 focus:border-blue-900 transition"
                   required
                 />
                 <button
@@ -114,7 +123,7 @@ function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white py-3.5 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 group shadow-lg shadow-slate-900/10"
+              className="w-full bg-blue-900 hover:bg-blue-800 disabled:bg-slate-300 text-white py-3 rounded font-semibold text-sm transition flex items-center justify-center gap-2 group"
             >
               {loading ? (
                 "Memproses..."

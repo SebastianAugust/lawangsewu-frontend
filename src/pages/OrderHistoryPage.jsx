@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getOrders, requestVoid } from "../api/order";
+import { getBranches } from "../api/branch";
 import MainLayout from "../layouts/MainLayout";
 import { printReceipt } from "../components/Receipt";
 import {
@@ -16,22 +17,36 @@ import {
   AlertTriangle,
   X,
   Inbox,
+  Store,
 } from "lucide-react";
 
 function OrderHistoryPage() {
+  const role = localStorage.getItem("role");
+  const isOwner = role === "owner";
   const [orders, setOrders] = useState([]);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [voidOrderId, setVoidOrderId] = useState(null);
   const [voidReason, setVoidReason] = useState("");
+  // Branch filter is owner-only — a kasir is scoped to their cabang by backend.
+  const [branches, setBranches] = useState([]);
+  const [branchId, setBranchId] = useState("");
 
   const loadOrders = () => {
-    getOrders(date).then((res) => setOrders(res.data));
+    getOrders(date, undefined, isOwner ? branchId : undefined).then((res) =>
+      setOrders(res.data),
+    );
   };
 
   useEffect(() => {
+    if (isOwner) {
+      getBranches().then((res) => setBranches(res.data));
+    }
+  }, [isOwner]);
+
+  useEffect(() => {
     loadOrders();
-  }, [date]);
+  }, [date, branchId]);
 
   const handleVoidRequest = async (orderId) => {
     if (!voidReason.trim()) return alert("Alasan void harus diisi");
@@ -91,15 +106,35 @@ function OrderHistoryPage() {
               Daftar transaksi yang telah dilakukan.
             </p>
           </div>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              data-tour="date-filter"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition"
-            />
+          <div className="flex flex-wrap gap-2">
+            {isOwner && (
+              <div className="relative">
+                <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <select
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl pl-9 pr-8 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition appearance-none"
+                >
+                  <option value="">Semua Cabang</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            )}
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                data-tour="date-filter"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition"
+              />
+            </div>
           </div>
         </div>
 
@@ -120,14 +155,14 @@ function OrderHistoryPage() {
                 {completedCount} selesai
               </p>
             </div>
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-5 shadow-sm shadow-emerald-500/20 text-white">
-              <p className="text-[11px] text-emerald-100 font-bold uppercase tracking-wider mb-2">
+            <div className="bg-blue-900 rounded-md p-5 text-white">
+              <p className="text-[11px] text-blue-200 font-bold uppercase tracking-wider mb-2">
                 Pendapatan
               </p>
-              <p className="font-display text-2xl font-bold">
+              <p className="font-display text-2xl font-bold tabular-nums">
                 Rp {totalRevenue.toLocaleString()}
               </p>
-              <p className="text-xs text-emerald-100 mt-1">dari pesanan selesai</p>
+              <p className="text-xs text-blue-200 mt-1">dari pesanan selesai</p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
@@ -185,8 +220,8 @@ function OrderHistoryPage() {
                     }}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center shrink-0">
-                        <span className="text-amber-700 font-bold text-sm">
+                      <div className="w-11 h-11 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center shrink-0">
+                        <span className="text-slate-700 font-semibold text-sm">
                           {displayName.charAt(0).toUpperCase()}
                         </span>
                       </div>

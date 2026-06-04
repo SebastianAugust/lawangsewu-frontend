@@ -175,10 +175,10 @@ function MenuManagePage() {
       {/* Form */}
       {showForm && (
         <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm mb-6 overflow-hidden animate-slide-up">
-          <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-br from-amber-50/50 to-white flex items-center gap-2">
-            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-50 border border-blue-200 rounded flex items-center justify-center">
               {editingMenu ? (
-                <Pencil className="w-4 h-4 text-amber-600" />
+                <Pencil className="w-4 h-4 text-blue-900" />
               ) : (
                 <Plus className="w-4 h-4 text-amber-600" strokeWidth={2.5} />
               )}
@@ -388,8 +388,8 @@ function MenuManagePage() {
               className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4"
             >
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-11 h-11 bg-gradient-to-br from-amber-100 to-amber-200 rounded-xl flex items-center justify-center shrink-0">
-                  <UtensilsCrossed className="w-5 h-5 text-amber-700" />
+                <div className="w-11 h-11 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center shrink-0">
+                  <UtensilsCrossed className="w-5 h-5 text-slate-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 truncate">{menu.name}</p>
@@ -494,8 +494,8 @@ function MenuManagePage() {
                 >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg flex items-center justify-center shrink-0">
-                        <UtensilsCrossed className="w-4 h-4 text-amber-700" />
+                      <div className="w-9 h-9 bg-slate-100 border border-slate-200 rounded flex items-center justify-center shrink-0">
+                        <UtensilsCrossed className="w-4 h-4 text-slate-600" />
                       </div>
                       <p className="font-semibold text-slate-800">{menu.name}</p>
                     </div>

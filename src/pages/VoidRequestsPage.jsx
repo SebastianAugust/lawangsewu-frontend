@@ -87,12 +87,12 @@ function VoidRequestsPage() {
                   }`}
                 >
                   {/* Top alert bar */}
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200/50 px-5 py-2.5 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                    <p className="text-xs text-amber-800 font-semibold flex-1">
+                  <div className="bg-yellow-50 border-b border-yellow-200 px-5 py-2.5 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-yellow-700 shrink-0" />
+                    <p className="text-xs text-yellow-900 font-semibold flex-1">
                       Menunggu keputusan owner
                     </p>
-                    <span className="text-[11px] font-bold text-amber-700 bg-white/80 px-2 py-0.5 rounded-md">
+                    <span className="text-[11px] font-bold text-yellow-800 bg-white border border-yellow-200 px-2 py-0.5 rounded">
                       Order #{order.id}
                     </span>
                   </div>

@@ -1,13 +1,17 @@
 import api from "./axios";
 
-export const getDailyReport = (date) =>
-  api.get("/reports/daily", { params: { date } });
+// `branchId` is optional: pass a branch id to scope the report to one cabang,
+// or null/undefined for the owner "Semua Cabang" (all branches) view.
+export const getDailyReport = (date, branchId) =>
+  api.get("/reports/daily", { params: { date, branch_id: branchId || undefined } });
 
-export const getWeeklyReport = (date) =>
-  api.get("/reports/weekly", { params: { date } });
+export const getWeeklyReport = (date, branchId) =>
+  api.get("/reports/weekly", { params: { date, branch_id: branchId || undefined } });
 
-export const getMonthlyReport = (month, year) =>
-  api.get("/reports/monthly", { params: { month, year } });
+export const getMonthlyReport = (month, year, branchId) =>
+  api.get("/reports/monthly", {
+    params: { month, year, branch_id: branchId || undefined },
+  });
 
 // Pure date helper (no network) — returns the 7 ISO date strings
 // (Mon..Sun) of the week containing `dateStr`. Kept for the date picker UX.

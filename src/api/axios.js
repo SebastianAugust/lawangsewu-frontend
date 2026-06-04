@@ -1,7 +1,7 @@
 import axios from "axios";
 
-export const BASE_URL = "http://localhost:8000";
-
+export const BASE_URL =
+  "https://midnightblue-hedgehog-803207.hostingersite.com";
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,
   headers: {

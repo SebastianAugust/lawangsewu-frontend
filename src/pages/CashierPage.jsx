@@ -331,8 +331,7 @@ function CashierPage() {
       {showReceipt && lastOrder && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-slide-up">
           <div data-tour="receipt-modal" className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
-            <div className="bg-gradient-to-br from-amber-700 via-orange-700 to-amber-900 p-6 text-center text-white relative overflow-hidden">
-              <div className="absolute inset-0 bg-batik-rich opacity-40" />
+            <div className="bg-blue-900 p-6 text-center text-white relative overflow-hidden">
               <button
                 onClick={() => setShowReceipt(false)}
                 className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition"
@@ -769,7 +768,7 @@ function CashierPage() {
                                   </div>
                                   <button
                                     onClick={handleAddToCart}
-                                    className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-sm shadow-amber-500/20"
+                                    className="flex-1 bg-blue-900 hover:bg-blue-800 text-white py-2.5 rounded text-xs font-semibold transition"
                                   >
                                     + Rp{" "}
                                     {((inputVariant?.price || menu.price) * inputQty).toLocaleString()}

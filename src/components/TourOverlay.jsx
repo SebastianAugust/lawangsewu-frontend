@@ -221,9 +221,9 @@ function TourOverlay({
             height={rect.height + 2 * PAD}
             rx="12"
             fill="none"
-            stroke="#f59e0b"
+            stroke="#1e40af"
             strokeWidth="2"
-            style={{ filter: "drop-shadow(0 0 8px rgba(245,158,11,0.6))" }}
+            style={{ filter: "drop-shadow(0 0 8px rgba(30,64,175,0.55))" }}
           />
         )}
       </svg>
@@ -267,11 +267,11 @@ function TourOverlay({
 
         <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 bg-blue-50 px-2 py-0.5 rounded">
               Step {stepIdx + 1}/{totalSteps}
             </span>
             {isWait && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-red-700 bg-red-50 px-2 py-0.5 rounded">
                 Praktek
               </span>
             )}
@@ -307,14 +307,14 @@ function TourOverlay({
             <button
               type="button"
               onClick={onNext}
-              className="bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5"
+              className="bg-blue-900 hover:bg-blue-800 text-white text-sm font-semibold px-4 py-2 rounded transition flex items-center gap-1.5"
             >
               {stepIdx === totalSteps - 1 ? "Selesai" : "Lanjut"}
               <ChevronRight className="w-4 h-4" />
             </button>
           ) : (
-            <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
+            <span className="text-xs font-semibold text-blue-900 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-blue-700 rounded-full animate-pulse" />
               Lakukan aksi di atas
             </span>
           )}

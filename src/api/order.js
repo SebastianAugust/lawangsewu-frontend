@@ -8,8 +8,12 @@ export const isTourMode = () =>
 export const createOrder = (data) =>
   api.post("/orders", { ...data, is_test: isTourMode() });
 
-export const getOrders = (date, status) =>
-  api.get("/orders", { params: { date, status } });
+// `branchId` only affects owners (a kasir is always scoped to their own
+// cabang by the backend). null/undefined means all cabang for owners.
+export const getOrders = (date, status, branchId) =>
+  api.get("/orders", {
+    params: { date, status, branch_id: branchId || undefined },
+  });
 export const getOrder = (id) => api.get(`/orders/${id}`);
 export const requestVoid = (id, reason) =>
   api.post(`/orders/${id}/void-request`, { void_reason: reason });
