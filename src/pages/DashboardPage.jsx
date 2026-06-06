@@ -52,7 +52,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const COLORS = ["#1e40af", "#0d9488", "#7c3aed", "#0284c7", "#be123c", "#475569"];
+const COLORS = ["#2563eb", "#0d9488", "#7c3aed", "#0284c7", "#be123c", "#475569"];
 const DAYS_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
 function VariantBreakdownGrid({ data, formatRupiah }) {
@@ -828,7 +828,7 @@ function DashboardPage() {
                   onClick={() => setTab(t.value)}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${
                     active
-                      ? "bg-slate-900 text-white shadow-sm"
+                      ? "bg-blue-900 text-white shadow-sm"
                       : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
@@ -875,7 +875,7 @@ function DashboardPage() {
 
           {dailyReport && (
             <>
-              <div className="bg-white border border-slate-200 border-l-4 border-l-blue-900 rounded-md p-4 mb-6 flex items-start gap-3">
+              <div className="bg-[#eff6ff] border border-blue-500/20 rounded-2xl p-4 mb-6 flex items-start gap-3">
                 <div className="w-9 h-9 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center shrink-0">
                   <Sparkles className="w-4 h-4 text-blue-900" />
                 </div>
@@ -961,8 +961,8 @@ function DashboardPage() {
                     >
                       <defs>
                         <linearGradient id="dailyBarGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#1e40af" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#1e40af" stopOpacity={0.55} />
+                          <stop offset="0%" stopColor="#2563eb" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#2563eb" stopOpacity={0.55} />
                         </linearGradient>
                         <linearGradient id="dailyRevArea" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
@@ -1137,7 +1137,7 @@ function DashboardPage() {
 
           {weeklyReport && !weeklyLoading && (
             <>
-              <div className="bg-white border border-slate-200 border-l-4 border-l-blue-900 rounded-md p-4 mb-6 flex items-start gap-3">
+              <div className="bg-[#eff6ff] border border-blue-500/20 rounded-2xl p-4 mb-6 flex items-start gap-3">
                 <div className="w-9 h-9 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center shrink-0">
                   <Sparkles className="w-4 h-4 text-blue-900" />
                 </div>
@@ -1213,8 +1213,8 @@ function DashboardPage() {
                     <ComposedChart data={weeklyChartData}>
                       <defs>
                         <linearGradient id="weekBarGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#1e40af" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#1e40af" stopOpacity={0.55} />
+                          <stop offset="0%" stopColor="#2563eb" stopOpacity={1} />
+                          <stop offset="100%" stopColor="#2563eb" stopOpacity={0.55} />
                         </linearGradient>
                         <linearGradient id="weekRevArea" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
@@ -1456,7 +1456,7 @@ function DashboardPage() {
 
           {monthlyReport && (
             <>
-              <div className="bg-white border border-slate-200 border-l-4 border-l-blue-900 rounded-md p-4 mb-6 flex items-start gap-3">
+              <div className="bg-[#eff6ff] border border-blue-500/20 rounded-2xl p-4 mb-6 flex items-start gap-3">
                 <div className="w-9 h-9 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-center shrink-0">
                   <Sparkles className="w-4 h-4 text-blue-900" />
                 </div>

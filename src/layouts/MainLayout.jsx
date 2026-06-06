@@ -7,7 +7,6 @@ import {
   ScrollText,
   LayoutDashboard,
   LogOut,
-  Building2,
   Store,
   HelpCircle,
 } from "lucide-react";
@@ -46,14 +45,16 @@ function MainLayout({ children }) {
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-[52px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-6 lg:gap-10 min-w-0">
             <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-              <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-white" strokeWidth={2.2} />
+              <div className="w-[30px] h-[30px] bg-blue-900 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-[13px] tracking-tight leading-none">
+                  LS
+                </span>
               </div>
               <div className="hidden sm:flex items-baseline gap-1.5">
-                <p className="font-display font-bold text-[15px] text-slate-900 leading-none tracking-tight">
+                <p className="font-semibold text-[15px] text-slate-800 leading-none tracking-tight">
                   Lawang Sewu
                 </p>
                 <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-[0.14em] leading-none">
@@ -62,7 +63,7 @@ function MainLayout({ children }) {
               </div>
             </Link>
 
-            <div className="flex items-center gap-0.5 overflow-x-auto">
+            <div className="flex items-center gap-1 overflow-x-auto">
               {navLinks
                 .filter((link) => link.roles.includes(role))
                 .map((link) => {
@@ -74,17 +75,14 @@ function MainLayout({ children }) {
                       to={link.to}
                       title={link.label}
                       data-tour={`nav-${link.to.replace("/", "") || "kasir"}`}
-                      className={`relative flex items-center gap-2 px-3 h-14 text-sm font-medium transition whitespace-nowrap ${
+                      className={`flex items-center gap-2 px-3 py-[5px] rounded-lg text-[13px] whitespace-nowrap ${
                         active
-                          ? "text-blue-900"
-                          : "text-slate-500 hover:text-slate-900"
+                          ? "bg-[#eef2f7] text-[#1e3a5f] font-semibold"
+                          : "text-[#94a3b8] hover:text-slate-700 hover:bg-slate-50 font-medium"
                       }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" strokeWidth={2} />
-                      <span className="hidden lg:inline">{link.label}</span>
-                      {active && (
-                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-900" />
-                      )}
+                      <span className="hidden md:inline">{link.label}</span>
                     </Link>
                   );
                 })}
@@ -93,13 +91,13 @@ function MainLayout({ children }) {
 
           <div className="flex items-center gap-1 shrink-0">
             <div className="hidden md:flex items-center gap-2.5 pr-3 mr-1 border-r border-slate-200">
-              <div className="w-8 h-8 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center">
-                <span className="text-slate-700 font-semibold text-xs">
+              <div className="w-7 h-7 bg-blue-900 rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-xs">
                   {initial}
                 </span>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold text-slate-900 leading-none">
+                <p className="text-xs font-bold text-slate-800 leading-none">
                   {userName}
                 </p>
                 <p className="text-[10px] text-slate-500 mt-1 font-medium uppercase tracking-wider">

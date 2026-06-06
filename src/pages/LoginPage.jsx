@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Building2 } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -41,34 +41,28 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50">
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md animate-slide-up">
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-blue-900 rounded-md flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" strokeWidth={2.2} />
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-6">
+      <div
+        className="w-full max-w-[400px] bg-white rounded-[20px] border border-black/[0.07] p-10"
+        style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.08)" }}
+      >
+        <div className="animate-slide-up">
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="w-10 h-10 bg-blue-900 rounded-xl flex items-center justify-center mb-4">
+              <span className="text-white font-bold text-sm tracking-tight">
+                LS
+              </span>
             </div>
-            <div>
-              <p className="font-display font-bold text-base leading-none text-slate-900 tracking-tight">
-                Lawang Sewu
-              </p>
-              <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-[0.14em] font-semibold">
-                Point of Sale
-              </p>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
-              Masuk ke akun Anda
-            </h2>
-            <p className="text-sm text-slate-500 mt-2">
-              Silakan masukkan kredensial untuk melanjutkan ke sistem.
+            <p className="text-[22px] font-bold text-slate-800 tracking-tight leading-none">
+              Lawang Sewu
+            </p>
+            <p className="text-[13px] text-slate-400 mt-2">
+              Point of Sale System
             </p>
           </div>
 
           {error && (
-            <div className="mb-5 bg-red-50 border border-red-200 border-l-4 border-l-red-600 text-red-800 text-sm px-4 py-3 rounded flex items-start gap-2">
+            <div className="mb-5 bg-[#fef2f2] text-[#dc2626] text-[13px] px-3.5 py-2.5 rounded-lg flex items-start gap-2">
               <span className="font-bold">!</span>
               <span>{error}</span>
             </div>
@@ -86,7 +80,7 @@ function LoginPage() {
                   placeholder="email@lawangsewu.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded pl-11 pr-4 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/15 focus:border-blue-900 transition"
+                  className="w-full bg-[#f8fafc] border border-black/[0.08] rounded-[10px] pl-11 pr-4 py-3 text-sm placeholder:text-slate-300 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition"
                   required
                 />
               </div>
@@ -103,7 +97,7 @@ function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded pl-11 pr-11 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-900/15 focus:border-blue-900 transition"
+                  className="w-full bg-[#f8fafc] border border-black/[0.08] rounded-[10px] pl-11 pr-11 py-3 text-sm placeholder:text-slate-300 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition"
                   required
                 />
                 <button
@@ -123,7 +117,7 @@ function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-900 hover:bg-blue-800 disabled:bg-slate-300 text-white py-3 rounded font-semibold text-sm transition flex items-center justify-center gap-2 group"
+              className="w-full bg-blue-900 hover:bg-blue-800 disabled:bg-slate-300 text-white py-[13px] rounded-xl font-semibold text-[15px] transition flex items-center justify-center gap-2 group"
             >
               {loading ? (
                 "Memproses..."

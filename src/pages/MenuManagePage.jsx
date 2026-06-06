@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   getAllMenus,
   createMenu,
@@ -6,6 +6,7 @@ import {
   deleteMenu,
   getCategories,
 } from "../api/menu";
+import { BASE_URL } from "../api/axios";
 import MainLayout from "../layouts/MainLayout";
 import {
   Plus,
@@ -17,6 +18,7 @@ import {
   Search,
   Layers,
   Save,
+  ImagePlus,
 } from "lucide-react";
 
 function MenuManagePage() {
@@ -32,7 +34,10 @@ function MenuManagePage() {
     price: "",
     hasVariants: false,
     variants: [],
+    image: null,
+    imagePreview: null,
   });
+  const fileInputRef = useRef(null);
 
   const loadData = () => {
     getAllMenus().then((res) => setMenus(res.data));
@@ -43,13 +48,56 @@ function MenuManagePage() {
     loadData();
   }, []);
 
+  // Revoke any in-memory object URL on unmount to avoid leaks. Tracks the
+  // latest preview via a ref so the cleanup runs once with the final value.
+  const previewRef = useRef(form.imagePreview);
+  useEffect(() => {
+    previewRef.current = form.imagePreview;
+  }, [form.imagePreview]);
+  useEffect(
+    () => () => {
+      if (previewRef.current?.startsWith("blob:"))
+        URL.revokeObjectURL(previewRef.current);
+    },
+    [],
+  );
+
+  const revokePreview = (url) => {
+    if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      alert("Format gambar harus JPG, PNG, atau WEBP.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran gambar maksimal 2MB.");
+      return;
+    }
+    revokePreview(form.imagePreview);
+    setForm({ ...form, image: file, imagePreview: URL.createObjectURL(file) });
+  };
+
+  const handleRemoveImage = () => {
+    revokePreview(form.imagePreview);
+    setForm({ ...form, image: null, imagePreview: null });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const resetForm = () => {
+    revokePreview(form.imagePreview);
     setForm({
       category_id: "",
       name: "",
       price: "",
       hasVariants: false,
       variants: [],
+      image: null,
+      imagePreview: null,
     });
     setEditingMenu(null);
     setShowForm(false);
@@ -76,6 +124,9 @@ function MenuManagePage() {
         category_id: parseInt(form.category_id),
         name: form.name,
       };
+      // Only send a new file; in edit mode without a new pick, the existing
+      // image is preserved server-side (api/menu.js skips absent image).
+      if (form.image) data.image = form.image;
       if (form.hasVariants && form.variants.length > 0) {
         data.price = null;
         data.variants = form.variants.map((v) => ({
@@ -99,6 +150,7 @@ function MenuManagePage() {
 
   const handleEdit = (menu) => {
     const hasVariants = menu.variants && menu.variants.length > 0;
+    revokePreview(form.imagePreview);
     setEditingMenu(menu);
     setForm({
       category_id: menu.category_id,
@@ -113,6 +165,8 @@ function MenuManagePage() {
             is_available: v.is_available,
           }))
         : [],
+      image: null,
+      imagePreview: menu.image ? `${BASE_URL}/storage/${menu.image}` : null,
     });
     setShowForm(true);
   };
@@ -155,7 +209,7 @@ function MenuManagePage() {
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-sm ${
             showForm
               ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              : "bg-slate-900 text-white hover:bg-slate-800 shadow-slate-900/10"
+              : "bg-blue-900 text-white hover:bg-blue-800"
           }`}
         >
           {showForm ? (
@@ -221,6 +275,60 @@ function MenuManagePage() {
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition"
                 />
               </div>
+            </div>
+
+            {/* Image upload */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                Foto Menu
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/jpg"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              {form.imagePreview ? (
+                <div>
+                  <div className="relative w-32 h-32">
+                    <img
+                      src={form.imagePreview}
+                      alt="Preview foto menu"
+                      className="w-32 h-32 object-cover rounded-2xl border border-black/[0.07]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      title="Hapus foto"
+                      className="absolute -top-2 -right-2 w-7 h-7 bg-rose-600 hover:bg-rose-700 text-white rounded-full flex items-center justify-center transition"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-2 text-xs font-semibold text-blue-600 hover:text-blue-700 transition"
+                  >
+                    Ganti foto
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-32 h-32 flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-slate-300 bg-[#f8fafc] text-slate-400 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/40 transition"
+                >
+                  <ImagePlus className="w-6 h-6" />
+                  <span className="text-[11px] font-medium text-center px-2">
+                    Klik untuk upload foto
+                  </span>
+                </button>
+              )}
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                JPG, PNG, atau WEBP · maks 2MB
+              </p>
             </div>
 
             {/* Variant toggle */}
@@ -388,9 +496,17 @@ function MenuManagePage() {
               className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4"
             >
               <div className="flex items-start gap-3 mb-3">
-                <div className="w-11 h-11 bg-slate-100 border border-slate-200 rounded-md flex items-center justify-center shrink-0">
-                  <UtensilsCrossed className="w-5 h-5 text-slate-600" />
-                </div>
+                {menu.image ? (
+                  <img
+                    src={`${BASE_URL}/storage/${menu.image}`}
+                    alt={menu.name}
+                    className="w-10 h-10 object-cover rounded-lg border border-black/[0.07] shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-[#eef2f7] rounded-lg flex items-center justify-center shrink-0">
+                    <UtensilsCrossed className="w-5 h-5 text-[#93a8c4]" />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 truncate">{menu.name}</p>
                   <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-medium mt-1">
@@ -494,9 +610,17 @@ function MenuManagePage() {
                 >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-slate-100 border border-slate-200 rounded flex items-center justify-center shrink-0">
-                        <UtensilsCrossed className="w-4 h-4 text-slate-600" />
-                      </div>
+                      {menu.image ? (
+                        <img
+                          src={`${BASE_URL}/storage/${menu.image}`}
+                          alt={menu.name}
+                          className="w-10 h-10 object-cover rounded-lg border border-black/[0.07] shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-[#eef2f7] rounded-lg flex items-center justify-center shrink-0">
+                          <UtensilsCrossed className="w-5 h-5 text-[#93a8c4]" />
+                        </div>
+                      )}
                       <p className="font-semibold text-slate-800">{menu.name}</p>
                     </div>
                   </td>

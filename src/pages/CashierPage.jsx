@@ -632,7 +632,7 @@ function CashierPage() {
               onClick={() => setSelectedCategory(null)}
               className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition ${
                 !selectedCategory
-                  ? "bg-slate-900 text-white shadow-sm"
+                  ? "bg-blue-900 text-white"
                   : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
               }`}
             >
@@ -644,7 +644,7 @@ function CashierPage() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition ${
                   selectedCategory === cat.id
-                    ? "bg-slate-900 text-white shadow-sm"
+                    ? "bg-blue-900 text-white"
                     : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
                 }`}
               >
@@ -682,13 +682,13 @@ function CashierPage() {
                           <div key={menu.id} className="flex flex-col">
                             <button
                               onClick={() => handleMenuClick(menu)}
-                              className={`group w-full bg-white rounded-2xl text-left transition-all duration-200 border overflow-hidden ${
+                              className={`group w-full bg-white rounded-2xl text-left transition-all duration-150 overflow-hidden ${
                                 isMenuActive
-                                  ? "border-amber-500 shadow-lg shadow-amber-500/15 ring-2 ring-amber-500/20"
-                                  : "border-slate-200/70 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300"
+                                  ? "border-[1.5px] border-blue-500 ring-[3px] ring-blue-500/10"
+                                  : "border border-black/[0.06] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.09)]"
                               }`}
                             >
-                              <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-stone-100 to-stone-50 overflow-hidden">
+                              <div className="relative w-full aspect-square bg-[#eef2f7] overflow-hidden">
                                 {imgUrl ? (
                                   <img
                                     src={imgUrl}
@@ -697,20 +697,20 @@ function CashierPage() {
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <UtensilsCrossed className="w-10 h-10 text-stone-300" />
+                                    <UtensilsCrossed className="w-6 h-6 text-[#93a8c4]" />
                                   </div>
                                 )}
                                 {menu.variants?.length > 0 && (
-                                  <span className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                                  <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-[#1e3a5f] text-[9px] font-semibold px-1.5 py-0.5 rounded-[5px]">
                                     {menu.variants.length} varian
                                   </span>
                                 )}
                               </div>
-                              <div className="p-3">
-                                <p className="font-semibold text-slate-900 text-sm leading-tight line-clamp-2">
+                              <div className="px-2.5 pt-2 pb-2.5">
+                                <p className="font-medium text-slate-800 text-xs leading-tight line-clamp-2">
                                   {menu.name}
                                 </p>
-                                <p className="text-amber-600 font-display font-bold text-sm mt-1.5">
+                                <p className="text-blue-600 font-semibold text-xs mt-1">
                                   {getMenuDisplayPrice(menu)}
                                 </p>
                               </div>
@@ -976,7 +976,7 @@ function CashierPage() {
               <button
                 data-tour="pay-button"
                 onClick={handleProceedToPayment}
-                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3.5 rounded-xl font-bold transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+                className="w-full bg-blue-900 hover:bg-blue-800 text-white py-3.5 rounded-[11px] font-semibold transition flex items-center justify-center gap-2"
               >
                 <ReceiptIcon className="w-4 h-4" />
                 Lanjut Bayar
