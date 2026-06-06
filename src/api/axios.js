@@ -1,6 +1,9 @@
 import axios from "axios";
 
+// Local dev points to the Laravel server via VITE_API_URL (.env.local);
+// production builds fall back to the deployed Hostinger backend.
 export const BASE_URL =
+  import.meta.env.VITE_API_URL ??
   "https://midnightblue-hedgehog-803207.hostingersite.com";
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,

@@ -613,44 +613,78 @@ function CashierPage() {
         <div className="flex-1 flex flex-col min-w-0">
           <div className="flex items-center gap-3 mb-4">
             <div data-tour="search-menu" className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
+                style={{ color: "#cbd5e1" }}
+              />
               <input
                 type="text"
                 placeholder="Cari menu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 transition"
+                className="w-full focus:outline-none focus:border-blue-500"
+                style={{
+                  background: "#ffffff",
+                  border: "0.5px solid rgba(0,0,0,0.08)",
+                  borderRadius: 10,
+                  padding: "9px 16px 9px 36px",
+                  fontSize: 13,
+                  color: "#1e293b",
+                }}
               />
             </div>
-            <div className="text-xs text-slate-500 font-medium hidden md:block">
+            <div
+              className="hidden md:block whitespace-nowrap"
+              style={{
+                background: "#ffffff",
+                border: "0.5px solid rgba(0,0,0,0.08)",
+                borderRadius: 8,
+                padding: "6px 12px",
+                fontSize: 12,
+                color: "#94a3b8",
+              }}
+            >
               {filteredMenus.length} menu
             </div>
           </div>
 
-          <div data-tour="category-filter" className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-1 px-1">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition ${
-                !selectedCategory
-                  ? "bg-blue-900 text-white"
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-              }`}
-            >
-              Semua
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition ${
-                  selectedCategory === cat.id
-                    ? "bg-blue-900 text-white"
-                    : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
+          <div
+            data-tour="category-filter"
+            className="flex mb-4 overflow-x-auto pb-1 -mx-1 px-1"
+            style={{ gap: 7 }}
+          >
+            {(() => {
+              const pillStyle = (active) => ({
+                fontSize: 12,
+                fontWeight: 500,
+                padding: "6px 16px",
+                borderRadius: 100,
+                whiteSpace: "nowrap",
+                transition: "all 0.15s ease",
+                ...(active
+                  ? { background: "#1e3a5f", color: "#ffffff", border: "0.5px solid transparent" }
+                  : { background: "#ffffff", color: "#64748b", border: "0.5px solid rgba(0,0,0,0.1)" }),
+              });
+              return (
+                <>
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    style={pillStyle(!selectedCategory)}
+                  >
+                    Semua
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.id)}
+                      style={pillStyle(selectedCategory === cat.id)}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </>
+              );
+            })()}
           </div>
 
           <div data-tour="menu-grid" className="flex-1 overflow-y-auto pr-1 -mr-1 pb-24 lg:pb-0">
@@ -664,17 +698,36 @@ function CashierPage() {
               <div className="space-y-6">
                 {menusByCategory.map(({ category, items }) => (
                   <section key={category.id}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Tag className="w-3.5 h-3.5 text-amber-500" />
-                      <h3 className="font-display font-bold text-slate-900 text-sm uppercase tracking-wider">
+                    <div className="flex items-center mb-3" style={{ gap: 6 }}>
+                      <Tag
+                        style={{ width: 13, height: 13, color: "#1e3a5f" }}
+                      />
+                      <h3
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#1e3a5f",
+                          letterSpacing: "0.6px",
+                          textTransform: "uppercase",
+                        }}
+                      >
                         {category.name}
                       </h3>
-                      <span className="text-[11px] text-slate-400 font-semibold tabular-nums">
+                      <span
+                        className="tabular-nums"
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 400,
+                          color: "#94a3b8",
+                          textTransform: "none",
+                          letterSpacing: 0,
+                        }}
+                      >
                         {items.length} menu
                       </span>
                       <div className="flex-1 h-px bg-slate-200/70 ml-2" />
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-4 gap-3">
                       {items.map((menu) => {
                         const isMenuActive = activeMenu?.id === menu.id;
                         const imgUrl = getImageUrl(menu.image);
@@ -682,13 +735,17 @@ function CashierPage() {
                           <div key={menu.id} className="flex flex-col">
                             <button
                               onClick={() => handleMenuClick(menu)}
-                              className={`group w-full bg-white rounded-2xl text-left transition-all duration-150 overflow-hidden ${
+                              className={`group w-full bg-white text-left transition-all duration-150 overflow-hidden ${
                                 isMenuActive
                                   ? "border-[1.5px] border-blue-500 ring-[3px] ring-blue-500/10"
                                   : "border border-black/[0.06] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.09)]"
                               }`}
+                              style={{ borderRadius: 12 }}
                             >
-                              <div className="relative w-full aspect-square bg-[#eef2f7] overflow-hidden">
+                              <div
+                                className="relative overflow-hidden"
+                                style={{ height: 140, width: "100%", background: "#eef2f7" }}
+                              >
                                 {imgUrl ? (
                                   <img
                                     src={imgUrl}
@@ -697,20 +754,51 @@ function CashierPage() {
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <UtensilsCrossed className="w-6 h-6 text-[#93a8c4]" />
+                                    <UtensilsCrossed
+                                      style={{ width: 20, height: 20, color: "#93a8c4" }}
+                                    />
                                   </div>
                                 )}
                                 {menu.variants?.length > 0 && (
-                                  <span className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-[#1e3a5f] text-[9px] font-semibold px-1.5 py-0.5 rounded-[5px]">
+                                  <span
+                                    className="absolute backdrop-blur-sm"
+                                    style={{
+                                      top: 8,
+                                      right: 8,
+                                      background: "rgba(255,255,255,0.92)",
+                                      color: "#1e3a5f",
+                                      fontSize: 9,
+                                      fontWeight: 600,
+                                      borderRadius: 5,
+                                      padding: "2px 6px",
+                                      letterSpacing: "0.2px",
+                                    }}
+                                  >
                                     {menu.variants.length} varian
                                   </span>
                                 )}
                               </div>
-                              <div className="px-2.5 pt-2 pb-2.5">
-                                <p className="font-medium text-slate-800 text-xs leading-tight line-clamp-2">
+                              <div style={{ padding: "8px 10px 10px" }}>
+                                <p
+                                  className="line-clamp-2"
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: 500,
+                                    color: "#1e293b",
+                                    letterSpacing: "-0.1px",
+                                    lineHeight: 1.25,
+                                  }}
+                                >
                                   {menu.name}
                                 </p>
-                                <p className="text-blue-600 font-semibold text-xs mt-1">
+                                <p
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    color: "#2563eb",
+                                    marginTop: 4,
+                                  }}
+                                >
                                   {getMenuDisplayPrice(menu)}
                                 </p>
                               </div>
@@ -744,12 +832,13 @@ function CashierPage() {
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2">
-                                  <div className="flex items-center bg-slate-100 rounded-xl">
+                                  <div className="flex items-center gap-2">
                                     <button
                                       onClick={() => setInputQty(Math.max(1, inputQty - 1))}
-                                      className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-slate-900"
+                                      className="flex items-center justify-center rounded-full shrink-0"
+                                      style={{ width: 22, height: 22, background: "#f1f5f9", color: "#475569" }}
                                     >
-                                      <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                                      <Minus className="w-3 h-3" strokeWidth={2.5} />
                                     </button>
                                     <input
                                       type="number"
@@ -757,13 +846,15 @@ function CashierPage() {
                                       onChange={(e) =>
                                         setInputQty(Math.max(1, parseInt(e.target.value) || 1))
                                       }
-                                      className="w-9 text-center bg-transparent text-sm font-bold focus:outline-none"
+                                      className="text-center bg-transparent text-sm font-bold focus:outline-none"
+                                      style={{ width: 40 }}
                                     />
                                     <button
                                       onClick={() => setInputQty(inputQty + 1)}
-                                      className="w-9 h-9 flex items-center justify-center text-slate-600 hover:text-slate-900"
+                                      className="flex items-center justify-center rounded-full shrink-0"
+                                      style={{ width: 22, height: 22, background: "#f1f5f9", color: "#475569" }}
                                     >
-                                      <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                                      <Plus className="w-3 h-3" strokeWidth={2.5} />
                                     </button>
                                   </div>
                                   <button
@@ -798,12 +889,26 @@ function CashierPage() {
           <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-br from-stone-50 to-white">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center shrink-0">
-                  <ShoppingBag className="w-4 h-4 text-amber-600" strokeWidth={2.4} />
+                <div
+                  className="flex items-center justify-center shrink-0"
+                  style={{ width: 34, height: 34, background: "#eff6ff", borderRadius: 9 }}
+                >
+                  <ShoppingBag style={{ width: 16, height: 16, color: "#2563eb" }} strokeWidth={2.2} />
                 </div>
-                <h2 className="font-display font-bold text-slate-900">Pesanan</h2>
+                <h2 style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>
+                  Pesanan
+                </h2>
                 {cart.length > 0 && (
-                  <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                  <span
+                    className="rounded-full"
+                    style={{
+                      background: "#eff6ff",
+                      color: "#1d4ed8",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: "3px 9px",
+                    }}
+                  >
                     {totalItems} item
                   </span>
                 )}
@@ -910,15 +1015,27 @@ function CashierPage() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-slate-50 transition">
+                        <div
+                          className="flex items-center justify-center shrink-0"
+                          style={{ width: 34, height: 34, background: "#eff6ff", borderRadius: 9 }}
+                        >
+                          <UtensilsCrossed style={{ width: 15, height: 15, color: "#2563eb" }} />
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">
+                          <p
+                            className="truncate"
+                            style={{ fontSize: 12, fontWeight: 500, color: "#1e293b" }}
+                          >
                             {item.name}
                           </p>
-                          <p className="text-xs text-slate-400 mt-0.5">
+                          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
                             {item.quantity} × Rp {item.price.toLocaleString()}
                           </p>
                         </div>
-                        <p className="text-sm font-bold text-slate-800 whitespace-nowrap">
+                        <p
+                          className="whitespace-nowrap"
+                          style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}
+                        >
                           Rp {item.subtotal.toLocaleString()}
                         </p>
                         <div className="flex gap-0.5 lg:opacity-60 lg:group-hover:opacity-100 transition">
@@ -976,7 +1093,14 @@ function CashierPage() {
               <button
                 data-tour="pay-button"
                 onClick={handleProceedToPayment}
-                className="w-full bg-blue-900 hover:bg-blue-800 text-white py-3.5 rounded-[11px] font-semibold transition flex items-center justify-center gap-2"
+                className="w-full hover:bg-blue-800 text-white transition flex items-center justify-center gap-2"
+                style={{
+                  background: "#1e3a5f",
+                  borderRadius: 11,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  padding: 12,
+                }}
               >
                 <ReceiptIcon className="w-4 h-4" />
                 Lanjut Bayar

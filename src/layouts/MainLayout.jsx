@@ -48,16 +48,28 @@ function MainLayout({ children }) {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 h-[52px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-6 lg:gap-10 min-w-0">
             <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-              <div className="w-[30px] h-[30px] bg-blue-900 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-[13px] tracking-tight leading-none">
+              <div
+                className="flex items-center justify-center"
+                style={{ width: 30, height: 30, background: "#1e3a5f", borderRadius: 8 }}
+              >
+                <span
+                  className="text-white leading-none"
+                  style={{ fontSize: 11, fontWeight: 700 }}
+                >
                   LS
                 </span>
               </div>
               <div className="hidden sm:flex items-baseline gap-1.5">
-                <p className="font-semibold text-[15px] text-slate-800 leading-none tracking-tight">
+                <p
+                  className="leading-none"
+                  style={{ fontSize: 15, fontWeight: 600, color: "#1e293b", letterSpacing: "-0.4px" }}
+                >
                   Lawang Sewu
                 </p>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-[0.14em] leading-none">
+                <span
+                  className="leading-none"
+                  style={{ fontSize: 11, fontWeight: 400, color: "#94a3b8", letterSpacing: "0.5px" }}
+                >
                   POS
                 </span>
               </div>
@@ -75,11 +87,12 @@ function MainLayout({ children }) {
                       to={link.to}
                       title={link.label}
                       data-tour={`nav-${link.to.replace("/", "") || "kasir"}`}
-                      className={`flex items-center gap-2 px-3 py-[5px] rounded-lg text-[13px] whitespace-nowrap ${
+                      className={`flex items-center gap-2 whitespace-nowrap ${
                         active
                           ? "bg-[#eef2f7] text-[#1e3a5f] font-semibold"
                           : "text-[#94a3b8] hover:text-slate-700 hover:bg-slate-50 font-medium"
                       }`}
+                      style={{ fontSize: 12, padding: "5px 12px", borderRadius: 8 }}
                     >
                       <Icon className="w-4 h-4 shrink-0" strokeWidth={2} />
                       <span className="hidden md:inline">{link.label}</span>
