@@ -222,7 +222,9 @@ function UserManagePage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+            {/* noValidate: jangan biarkan HTML5 memblokir submit secara diam-diam.
+                Validasi & pesan error ditangani eksplisit di handleSubmit. */}
+            <form onSubmit={handleSubmit} noValidate className="p-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
                   Nama Cabang
