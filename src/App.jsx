@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage";
 import VoidRequestsPage from "./pages/VoidRequestsPage";
 import AuditLogPage from "./pages/AuditLogPage";
 import BranchManagePage from "./pages/BranchManagePage";
+import UserManagePage from "./pages/UserManagePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import InstallPrompt from "./components/InstallPrompt";
 import GuidedTour from "./components/GuidedTour";
@@ -73,6 +74,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["owner"]}>
                 <BranchManagePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <UserManagePage />
               </ProtectedRoute>
             }
           />
