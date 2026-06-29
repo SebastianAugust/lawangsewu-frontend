@@ -31,6 +31,7 @@ function CashierPage() {
   const [customerName, setCustomerName] = useState("");
   const [success, setSuccess] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
+  const searchInputRef = useRef(null);
 
   const [activeMenu, setActiveMenu] = useState(null);
   const [inputQty, setInputQty] = useState(1);
@@ -618,6 +619,7 @@ function CashierPage() {
                 style={{ color: "#cbd5e1" }}
               />
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Cari menu..."
                 value={searchQuery}
@@ -627,11 +629,40 @@ function CashierPage() {
                   background: "#ffffff",
                   border: "0.5px solid rgba(0,0,0,0.08)",
                   borderRadius: 10,
-                  padding: "9px 16px 9px 36px",
+                  padding: searchQuery
+                    ? "9px 36px 9px 36px"
+                    : "9px 16px 9px 36px",
                   fontSize: 13,
                   color: "#1e293b",
                 }}
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  title="Bersihkan pencarian"
+                  onClick={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#64748b")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
+                  style={{
+                    position: "absolute",
+                    right: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: 0,
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#94a3b8",
+                  }}
+                >
+                  <X style={{ width: 14, height: 14 }} />
+                </button>
+              )}
             </div>
             <div
               className="hidden md:block whitespace-nowrap"
