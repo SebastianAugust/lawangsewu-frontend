@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { User, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -13,11 +13,11 @@ function LoginPage() {
 
   const handleLogin = async (e) => {
     e?.preventDefault();
-    if (!email || !password) return;
+    if (!username || !password) return;
     setLoading(true);
     setError("");
     try {
-      const response = await login({ email, password });
+      const response = await login({ username, password });
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("role", response.data.user.role);
       localStorage.setItem("userName", response.data.user.name);
@@ -34,7 +34,7 @@ function LoginPage() {
       }
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Login gagal. Periksa kembali email & password.");
+      setError(err.response?.data?.message || "Login gagal. Periksa kembali username & password.");
     } finally {
       setLoading(false);
     }
@@ -71,15 +71,15 @@ function LoginPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
-                Email
+                Username
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  type="email"
-                  placeholder="email@lawangsewu.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  placeholder="Masukkan username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-[#f8fafc] border border-black/[0.08] rounded-[10px] pl-11 pr-4 py-3 text-sm placeholder:text-slate-300 focus:outline-none focus:ring-[3px] focus:ring-blue-500/10 focus:border-blue-500 focus:bg-white transition"
                   required
                 />

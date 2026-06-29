@@ -19,6 +19,7 @@ function UserManagePage() {
   const [editing, setEditing] = useState(null); // user object when editing
   const [branchName, setBranchName] = useState("");
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -35,6 +36,7 @@ function UserManagePage() {
     setEditing(null);
     setBranchName("");
     setName("");
+    setUsername("");
     setEmail("");
     setPassword("");
     setShowForm(true);
@@ -44,6 +46,7 @@ function UserManagePage() {
     setEditing(user);
     setBranchName(user.branch?.name || "");
     setName(user.name || "");
+    setUsername(user.username || "");
     setEmail(user.email || "");
     setPassword("");
     setShowForm(true);
@@ -58,6 +61,11 @@ function UserManagePage() {
     e.preventDefault();
     if (!branchName.trim()) return alert("Nama cabang harus diisi");
     if (!name.trim()) return alert("Nama kasir harus diisi");
+    if (!username.trim()) return alert("Username harus diisi");
+    if (username.trim().length < 3)
+      return alert("Username minimal 3 karakter");
+    if (!/^[a-zA-Z0-9_]+$/.test(username.trim()))
+      return alert("Username hanya boleh berisi huruf, angka, dan underscore");
     if (!email.trim()) return alert("Email harus diisi");
     if (!editing && !password) return alert("Password harus diisi");
     setSaving(true);
@@ -66,6 +74,7 @@ function UserManagePage() {
         const payload = {
           branch_name: branchName.trim(),
           name: name.trim(),
+          username: username.trim(),
           email: email.trim(),
         };
         if (password) payload.password = password;
@@ -74,6 +83,7 @@ function UserManagePage() {
         await createUser({
           branch_name: branchName.trim(),
           name: name.trim(),
+          username: username.trim(),
           email: email.trim(),
           password,
         });
@@ -193,6 +203,14 @@ function UserManagePage() {
                   <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
                     <UserRound className="w-3 h-3 shrink-0" />
                     {user.name}
+                    {user.username && (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        <span className="font-medium text-slate-500">
+                          @{user.username}
+                        </span>
+                      </>
+                    )}
                     <span className="text-slate-300">·</span>
                     {user.email}
                   </p>
@@ -271,6 +289,19 @@ function UserManagePage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Budi Santoso"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-900/10 focus:border-blue-900 transition"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">
+                  Username
+                </label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Contoh: kasir1"
                   className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-900/10 focus:border-blue-900 transition"
                   required
                 />
