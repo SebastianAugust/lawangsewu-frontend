@@ -142,6 +142,112 @@ function VariantBreakdownGrid({ data, formatRupiah }) {
   );
 }
 
+// "Rekap Varian": ringkasan dikelompokkan per nama varian (lintas menu),
+// dengan breakdown kontribusi tiap menu yang bisa di-expand. Hanya menerima
+// data variant_summary dari backend (item tanpa varian sudah dikecualikan).
+function VariantRecap({ data, formatRupiah }) {
+  const [open, setOpen] = useState({});
+  if (!data || data.length === 0) return null;
+
+  const toggle = (name) =>
+    setOpen((prev) => ({ ...prev, [name]: !prev[name] }));
+
+  const maxSold = data[0]?.total_sold || 1;
+
+  return (
+    <div className="space-y-2.5">
+      {data.map((v, i) => {
+        const isOpen = !!open[v.variant_name];
+        const pct = (v.total_sold / maxSold) * 100;
+        const accent = COLORS[i % COLORS.length];
+        return (
+          <div
+            key={v.variant_name}
+            className="border border-slate-200/70 rounded-[14px] overflow-hidden bg-white"
+          >
+            <button
+              type="button"
+              onClick={() => toggle(v.variant_name)}
+              className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-stone-50 transition"
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0 mt-1.5"
+                style={{ backgroundColor: accent }}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-[#1e3a5f] truncate">
+                    {v.variant_name}
+                  </p>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-sm tabular-nums text-slate-600">
+                      <span className="font-bold text-[#1e3a5f]">
+                        {v.total_sold}
+                      </span>{" "}
+                      pcs
+                    </span>
+                    <span className="text-sm font-semibold text-emerald-600 tabular-nums">
+                      {formatRupiah(v.total_revenue)}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 transition-transform ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                </div>
+                <div className="mt-2 w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, backgroundColor: accent }}
+                  />
+                </div>
+              </div>
+            </button>
+            {isOpen && (
+              <div className="px-4 pb-3 border-t border-slate-100 bg-stone-50/50">
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left py-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        Menu
+                      </th>
+                      <th className="text-right py-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        Terjual
+                      </th>
+                      <th className="text-right py-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        Pendapatan
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {v.breakdown.map((b) => (
+                      <tr
+                        key={b.menu_name}
+                        className="border-t border-slate-100"
+                      >
+                        <td className="py-2 text-sm font-medium text-slate-700">
+                          {b.menu_name}
+                        </td>
+                        <td className="py-2 text-sm font-bold text-slate-900 text-right tabular-nums">
+                          {b.sold}
+                        </td>
+                        <td className="py-2 text-sm text-emerald-600 font-semibold text-right tabular-nums">
+                          {formatRupiah(b.revenue)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function StatCard({ icon: Icon, label, value, trend, trendLabel, accent = "amber" }) {
   const accents = {
     amber: "from-amber-500/10 to-orange-500/5 text-amber-600 ring-amber-500/20",
@@ -1073,6 +1179,24 @@ function DashboardPage() {
                 subtitle="Prediksi kebutuhan besok"
               />
 
+              {dailyReport.variant_summary?.length > 0 && (
+                <div className="mt-6 bg-white rounded-2xl border border-slate-200/70 shadow-sm p-5">
+                  <div className="flex items-center gap-2 flex-wrap mb-4">
+                    <Layers className="w-4 h-4 text-[#1e3a5f]" />
+                    <h4 className="font-display font-bold text-[#1e3a5f]">
+                      Rekap Varian
+                    </h4>
+                    <span className="text-xs text-slate-400">
+                      — ringkasan per varian lintas menu (klik untuk rincian)
+                    </span>
+                  </div>
+                  <VariantRecap
+                    data={dailyReport.variant_summary}
+                    formatRupiah={formatRupiah}
+                  />
+                </div>
+              )}
+
               <div className="mt-6 bg-white rounded-2xl border border-slate-200/70 shadow-sm p-5">
                 <div className="flex items-center gap-2 flex-wrap mb-4">
                   <Layers className="w-4 h-4 text-amber-700" />
@@ -1737,6 +1861,24 @@ function DashboardPage() {
                   </div>
                 )}
               </div>
+
+              {monthlyReport.variant_summary?.length > 0 && (
+                <div className="mt-6 bg-white rounded-2xl border border-slate-200/70 shadow-sm p-5">
+                  <div className="flex items-center gap-2 flex-wrap mb-4">
+                    <Layers className="w-4 h-4 text-[#1e3a5f]" />
+                    <h4 className="font-display font-bold text-[#1e3a5f]">
+                      Rekap Varian
+                    </h4>
+                    <span className="text-xs text-slate-400">
+                      — ringkasan per varian lintas menu (klik untuk rincian)
+                    </span>
+                  </div>
+                  <VariantRecap
+                    data={monthlyReport.variant_summary}
+                    formatRupiah={formatRupiah}
+                  />
+                </div>
+              )}
 
               {/* Variant breakdown — auto-loads */}
               <div className="mt-6 bg-white rounded-2xl border border-slate-200/70 shadow-sm p-5">
