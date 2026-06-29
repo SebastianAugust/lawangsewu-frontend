@@ -18,6 +18,7 @@ import {
   X,
   Inbox,
   Store,
+  QrCode,
 } from "lucide-react";
 
 function OrderHistoryPage() {
@@ -92,6 +93,23 @@ function OrderHistoryPage() {
 
   const completedCount = orders.filter((o) => o.status === "completed").length;
   const voidedCount = orders.filter((o) => o.status === "voided").length;
+
+  // Breakdown pendapatan per metode pembayaran — hanya pesanan completed.
+  const revenueByMethod = orders
+    .filter((o) => o.status === "completed")
+    .reduce(
+      (acc, o) => {
+        if (o.payment_method === "cash") acc.cash += o.total_price;
+        else if (o.payment_method === "qris") acc.qris += o.total_price;
+        return acc;
+      },
+      { cash: 0, qris: 0 },
+    );
+
+  const paymentBreakdown = [
+    { label: "Cash", value: revenueByMethod.cash, icon: Wallet, color: "#16a34a" },
+    { label: "QRIS", value: revenueByMethod.qris, icon: QrCode, color: "#2563eb" },
+  ];
 
   return (
     <MainLayout>
@@ -178,6 +196,28 @@ function OrderHistoryPage() {
                 {orders.filter((o) => o.status === "void_pending").length} pending
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Payment method breakdown */}
+        {orders.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
+            {paymentBreakdown.map(({ label, value, icon: Icon, color }) => (
+              <div
+                key={label}
+                className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-sm"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className="w-4 h-4" style={{ color }} />
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                    {label}
+                  </p>
+                </div>
+                <p className="font-display text-base font-bold text-slate-900 tabular-nums">
+                  Rp {value.toLocaleString()}
+                </p>
+              </div>
+            ))}
           </div>
         )}
 
