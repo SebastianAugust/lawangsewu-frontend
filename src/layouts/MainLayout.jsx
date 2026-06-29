@@ -33,7 +33,7 @@ function MainLayout({ children }) {
     { to: "/", label: "Kasir", icon: ShoppingCart, roles: ["kasir", "owner"] },
     { to: "/orders", label: "Riwayat", icon: History, roles: ["kasir", "owner"] },
     { to: "/menus", label: "Menu", icon: UtensilsCrossed, roles: ["owner"] },
-    { to: "/users", label: "Pengguna", icon: Users, roles: ["owner"] },
+    { to: "/users", label: "Cabang", icon: Users, roles: ["owner"] },
     { to: "/void-requests", label: "Void", icon: Ban, roles: ["owner"] },
     { to: "/audit-log", label: "Audit", icon: ScrollText, roles: ["owner"] },
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["owner"] },
