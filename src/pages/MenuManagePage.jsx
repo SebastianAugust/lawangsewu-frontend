@@ -38,6 +38,7 @@ function MenuManagePage() {
     imagePreview: null,
   });
   const fileInputRef = useRef(null);
+  const formRef = useRef(null);
 
   const loadData = () => {
     getAllMenus().then((res) => setMenus(res.data));
@@ -65,6 +66,16 @@ function MenuManagePage() {
   const revokePreview = (url) => {
     if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
   };
+
+  // Form edit/tambah dirender di atas halaman. Saat klik Edit dari row yang
+  // posisinya di bawah (perlu scroll), form terbuka di luar viewport sehingga
+  // terlihat seolah tombol tidak berfungsi. Scroll form ke tampilan agar
+  // selalu terlihat dari row manapun.
+  useEffect(() => {
+    if (showForm) {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showForm, editingMenu]);
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
@@ -228,7 +239,10 @@ function MenuManagePage() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm mb-6 overflow-hidden animate-slide-up">
+        <div
+          ref={formRef}
+          className="bg-white rounded-2xl border border-slate-200/70 shadow-sm mb-6 overflow-hidden animate-slide-up"
+        >
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-50 border border-blue-200 rounded flex items-center justify-center">
               {editingMenu ? (
