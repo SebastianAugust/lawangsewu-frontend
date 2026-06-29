@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { getUsers, createUser, updateUser } from "../api/user";
+import { getUsers, createUser, updateUser, deleteUser } from "../api/user";
 import MainLayout from "../layouts/MainLayout";
 import {
   Store,
   Plus,
   Pencil,
+  Trash2,
   X,
   UserRound,
   CheckCircle2,
@@ -108,6 +109,21 @@ function UserManagePage() {
     }
   };
 
+  const handleDelete = async (user) => {
+    if (
+      !window.confirm(
+        `Hapus cabang "${user.branch?.name || user.name}" beserta akun kasirnya secara permanen? Riwayat transaksi tetap tersimpan, hanya tidak lagi terikat ke cabang ini. Tindakan ini tidak bisa dibatalkan.`,
+      )
+    )
+      return;
+    try {
+      await deleteUser(user.id);
+      loadUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal menghapus cabang");
+    }
+  };
+
   return (
     <MainLayout>
       <div className="max-w-4xl mx-auto">
@@ -194,11 +210,18 @@ function UserManagePage() {
                     title={user.is_active ? "Nonaktifkan" : "Aktifkan"}
                     className={`w-9 h-9 flex items-center justify-center rounded-lg transition ${
                       user.is_active
-                        ? "text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                        ? "text-slate-500 hover:text-amber-600 hover:bg-amber-50"
                         : "text-slate-500 hover:text-emerald-600 hover:bg-emerald-50"
                     }`}
                   >
                     <Power className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(user)}
+                    title="Hapus cabang & akun"
+                    className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
