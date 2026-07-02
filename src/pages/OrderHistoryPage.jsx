@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import { getOrders, requestVoid } from "../api/order";
 import { getBranches } from "../api/branch";
 import MainLayout from "../layouts/MainLayout";
-import { printReceipt } from "../components/Receipt";
+import BluetoothPrinterButton from "../components/BluetoothPrinterButton";
 import {
   Calendar,
   ChevronDown,
-  Printer,
   Ban,
   CheckCircle2,
   Clock,
@@ -359,24 +358,23 @@ function OrderHistoryPage() {
 
                       {order.status === "completed" && (
                         <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
-                          <button
-                            onClick={() => {
-                              const sorted = [...orders].sort(
-                                (a, b) =>
-                                  new Date(a.created_at) - new Date(b.created_at),
-                              );
-                              const seq =
-                                sorted.findIndex((o) => o.id === order.id) + 1;
-                              printReceipt({
+                          <div className="w-full sm:w-56">
+                            <BluetoothPrinterButton
+                              order={{
                                 ...order,
-                                daily_sequence: seq || null,
-                              });
-                            }}
-                            className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-100 transition"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            Cetak Ulang Struk
-                          </button>
+                                daily_sequence:
+                                  [...orders]
+                                    .sort(
+                                      (a, b) =>
+                                        new Date(a.created_at) -
+                                        new Date(b.created_at),
+                                    )
+                                    .findIndex((o) => o.id === order.id) + 1 ||
+                                  null,
+                              }}
+                              compact
+                            />
+                          </div>
                           {voidOrderId === order.id ? (
                             <div data-tour="void-form" className="flex gap-2 items-center w-full sm:w-auto">
                               <input

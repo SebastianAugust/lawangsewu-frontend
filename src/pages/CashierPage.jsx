@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { getMenus, getCategories } from "../api/menu";
 import { createOrder, getOrders } from "../api/order";
 import { BASE_URL } from "../api/axios";
-import { printReceipt } from "../components/Receipt";
+import BluetoothPrinterButton from "../components/BluetoothPrinterButton";
 import MainLayout from "../layouts/MainLayout";
 import {
   Search,
@@ -12,7 +12,6 @@ import {
   Pencil,
   Trash2,
   CheckCircle2,
-  Printer,
   X,
   Wallet,
   Smartphone,
@@ -401,17 +400,11 @@ function CashierPage() {
                   </>
                 )}
               </div>
-              <div className="mt-6 flex gap-2">
-                <button
-                  onClick={() => printReceipt(lastOrder)}
-                  className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <Printer className="w-4 h-4" />
-                  Cetak Struk
-                </button>
+              <div className="mt-6 space-y-2">
+                <BluetoothPrinterButton order={lastOrder} />
                 <button
                   onClick={() => setShowReceipt(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-sm font-semibold transition"
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-sm font-semibold transition"
                 >
                   Tutup
                 </button>
