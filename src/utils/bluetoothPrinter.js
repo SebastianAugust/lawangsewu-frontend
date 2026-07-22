@@ -253,9 +253,10 @@ function buildReceiptBytes(order) {
     const qty = item.quantity;
     const price =
       item.price ?? (qty ? Math.round(item.subtotal / qty) : item.subtotal);
-    // Menu name: double width + height + bold. Long names wrap automatically
-    // (~16 chars/line at this size); never truncate them.
-    push(COMMANDS.FONT_DBL_BOTH);
+    // Menu name: double height + bold — tall enough to read from the kitchen,
+    // but normal width so it fits ~32 chars/line and isn't oversized. Long
+    // names wrap automatically; never truncate them.
+    push(COMMANDS.FONT_DBL_HEIGHT);
     push(COMMANDS.BOLD_ON);
     push(`${getItemName(item)}\n`);
     // Reset to normal size before the qty/price line and the next item.

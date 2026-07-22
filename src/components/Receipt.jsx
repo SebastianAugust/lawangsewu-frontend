@@ -68,7 +68,7 @@ export function printReceipt(order) {
             margin: 6px 0;
         }
         .store-name {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
             letter-spacing: 1px;
         }
@@ -84,7 +84,7 @@ export function printReceipt(order) {
             margin-bottom: 10px;
         }
         .item-name {
-            font-size: 19px;
+            font-size: 16px;
             font-weight: bold;
             line-height: 1.2;
         }
@@ -97,7 +97,7 @@ export function printReceipt(order) {
             display: flex;
             justify-content: space-between;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 18px;
             margin: 4px 0;
         }
         .pay-row {
