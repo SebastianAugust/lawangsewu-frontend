@@ -11,8 +11,9 @@ const COMMANDS = {
   ALIGN_LEFT: [ESC, 0x61, 0x00], // Left align
   BOLD_ON: [ESC, 0x45, 0x01], // Bold on
   BOLD_OFF: [ESC, 0x45, 0x00], // Bold off
-  FONT_NORMAL: [ESC, 0x21, 0x00], // Normal font
-  FONT_DOUBLE: [ESC, 0x21, 0x30], // Double size font
+  FONT_NORMAL: [GS, 0x21, 0x00], // Normal character size (GS ! 0)
+  FONT_DBL_HEIGHT: [GS, 0x21, 0x01], // Double height only — for totals
+  FONT_DBL_BOTH: [GS, 0x21, 0x11], // Double width + height — for menu names
   LINE_FEED: [0x0a], // Line feed
   CUT_PAPER: [GS, 0x56, 0x41, 0x10], // Cut paper
   DIVIDER: "--------------------------------\n", // 32 char divider for 58mm
@@ -229,17 +230,16 @@ function buildReceiptBytes(order) {
     minute: "2-digit",
   });
 
-  // Header
+  // Header (center, normal size, bold)
   push(COMMANDS.INIT);
   push(COMMANDS.ALIGN_CENTER);
-  push(COMMANDS.FONT_DOUBLE);
+  push(COMMANDS.FONT_NORMAL);
   push(COMMANDS.BOLD_ON);
   push("LAWANG SEWU\n");
-  push(COMMANDS.FONT_NORMAL);
-  push(COMMANDS.BOLD_OFF);
   push("Restoran & Rumah Makan\n");
+  push(COMMANDS.BOLD_OFF);
 
-  // Meta
+  // Transaction info (left, normal size)
   push(COMMANDS.ALIGN_LEFT);
   push(COMMANDS.DIVIDER);
   push(`Struk #${order.daily_sequence || order.id}\n`);
@@ -247,38 +247,49 @@ function buildReceiptBytes(order) {
   if (kasir) push(`Kasir: ${kasir}\n`);
   if (order.customer_name) push(`Pelanggan: ${order.customer_name}\n`);
 
-  // Items
+  // Items — menu name in double size + bold for kitchen readability.
   push(COMMANDS.DIVIDER);
   items.forEach((item) => {
     const qty = item.quantity;
     const price =
       item.price ?? (qty ? Math.round(item.subtotal / qty) : item.subtotal);
+    // Menu name: double width + height + bold. Long names wrap automatically
+    // (~16 chars/line at this size); never truncate them.
+    push(COMMANDS.FONT_DBL_BOTH);
+    push(COMMANDS.BOLD_ON);
     push(`${getItemName(item)}\n`);
+    // Reset to normal size before the qty/price line and the next item.
+    push(COMMANDS.BOLD_OFF);
+    push(COMMANDS.FONT_NORMAL);
     push(twoCols(`${qty} x ${formatRp(price)}`, formatRp(item.subtotal)));
+    // Blank line between items for readability.
+    push(COMMANDS.LINE_FEED);
   });
 
-  // Total
+  // Total (center, double height, bold)
   push(COMMANDS.DIVIDER);
+  push(COMMANDS.ALIGN_CENTER);
+  push(COMMANDS.FONT_DBL_HEIGHT);
   push(COMMANDS.BOLD_ON);
-  push(twoCols("TOTAL:", formatRp(total)));
+  push(`TOTAL: ${formatRp(total)}\n`);
+  push(COMMANDS.FONT_NORMAL);
   push(COMMANDS.BOLD_OFF);
 
-  // Payment
+  // Payment (center, normal size)
   push(`${paymentMethod}\n`);
   if ((order.payment_method || "").toLowerCase() === "cash") {
     if (order.cash_received != null) {
-      push(twoCols("Tunai:", formatRp(order.cash_received)));
+      push(`Tunai: ${formatRp(order.cash_received)}\n`);
     }
     if (order.change_amount != null) {
-      push(twoCols("Kembali:", formatRp(order.change_amount)));
+      push(`Kembali: ${formatRp(order.change_amount)}\n`);
     }
   }
 
-  // Footer
+  // Footer (center, normal size)
   push(COMMANDS.DIVIDER);
-  push(COMMANDS.ALIGN_CENTER);
   push("Terima kasih sudah makan\n");
-  push("di Lawang Sewu! \u{1F64F}\n");
+  push("di Lawang Sewu!\n");
   push(COMMANDS.LINE_FEED);
   push(COMMANDS.LINE_FEED);
   push(COMMANDS.LINE_FEED);

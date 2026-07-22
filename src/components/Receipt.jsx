@@ -5,6 +5,11 @@ export function printReceipt(order) {
   const cashReceived = order.cash_received;
   const changeAmount = order.change_amount;
   const totalPrice = order.total_price;
+  const kasir =
+    order.kasir_name ||
+    order.cashier_name ||
+    (typeof localStorage !== "undefined" && localStorage.getItem("userName")) ||
+    "";
 
   const formatRp = (num) => `Rp ${Number(num).toLocaleString("id-ID")}`;
 
@@ -26,12 +31,14 @@ export function printReceipt(order) {
     minute: "2-digit",
   });
 
+  const isCash = (order.payment_method || "").toLowerCase() === "cash";
+
   const receiptHTML = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Struk #${order.id}</title>
+    <title>Struk #${order.daily_sequence || order.id}</title>
     <style>
         * {
             margin: 0;
@@ -44,7 +51,7 @@ export function printReceipt(order) {
         }
         body {
             font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 14px;
             width: 58mm;
             padding: 4mm;
             color: #000;
@@ -58,70 +65,69 @@ export function printReceipt(order) {
         }
         .divider {
             border-top: 1px dashed #000;
-            margin: 4px 0;
+            margin: 6px 0;
         }
-        .double-divider {
-            border-top: 2px solid #000;
-            margin: 4px 0;
+        .store-name {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1px;
         }
-        .row {
-            display: flex;
-            justify-content: space-between;
+        .store-info {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .meta {
+            font-size: 14px;
+        }
+        /* One item block: big bold menu name, detail line below, gap after. */
+        .item {
+            margin-bottom: 10px;
         }
         .item-name {
-            font-size: 11px;
+            font-size: 19px;
+            font-weight: bold;
+            line-height: 1.2;
         }
         .item-detail {
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
-            padding-left: 8px;
-            color: #333;
+            font-size: 14px;
         }
         .total-row {
             display: flex;
             justify-content: space-between;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 20px;
             margin: 4px 0;
+        }
+        .pay-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
         }
         .footer {
             text-align: center;
-            font-size: 10px;
+            font-size: 14px;
             margin-top: 8px;
-            color: #555;
-        }
-        .store-name {
-            font-size: 16px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        .store-info {
-            font-size: 10px;
-            color: #555;
-        }
-        .customer {
-            font-size: 11px;
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="center">
         <div class="store-name">LAWANG SEWU</div>
-        <div class="store-info">Jl. Puri Indah Jatinangor No.9 Blok B4, Cikeruh, Jatinangor, Sumedang, Jawa Barat</div>
-        <div class="store-info">Telp: 0822 8133 6269</div>
+        <div class="store-info">Restoran &amp; Rumah Makan</div>
     </div>
 
     <div class="divider"></div>
 
-    <div class="row" style="font-size: 10px;">
-        <span>${dateStr} ${timeStr}</span>
-        <span class="bold">#${order.daily_sequence || order.id}</span>
+    <div class="meta">
+        <div>Struk #${order.daily_sequence || order.id}</div>
+        <div>${dateStr} ${timeStr}</div>
+        ${kasir ? `<div>Kasir: ${kasir}</div>` : ""}
+        ${customerName ? `<div>Pelanggan: ${customerName}</div>` : ""}
     </div>
-    ${customerName ? `<div class="customer">${customerName}</div>` : ""}
 
-    <div class="double-divider"></div>
+    <div class="divider"></div>
 
     ${items
       .map((item) => {
@@ -130,33 +136,39 @@ export function printReceipt(order) {
         const price = item.price || Math.round(item.subtotal / item.quantity);
         const subtotal = item.subtotal;
         return `
-        <div class="item-name">${name}</div>
-        <div class="item-detail">
-            <span>${qty} x ${formatRp(price)}</span>
-            <span>${formatRp(subtotal)}</span>
+        <div class="item">
+            <div class="item-name">${name}</div>
+            <div class="item-detail">
+                <span>${qty} x ${formatRp(price)}</span>
+                <span>${formatRp(subtotal)}</span>
+            </div>
         </div>
         `;
       })
       .join("")}
 
-    <div class="double-divider"></div>
+    <div class="divider"></div>
 
     <div class="total-row">
         <span>TOTAL</span>
         <span>${formatRp(totalPrice)}</span>
     </div>
-
-    <div class="divider"></div>
-
-    <div class="row" style="font-size: 11px;">
-        <span>Bayar (${paymentMethod})</span>
-        <span>${cashReceived ? formatRp(cashReceived) : formatRp(totalPrice)}</span>
-    </div>
+    <div class="center bold">${paymentMethod}</div>
     ${
-      changeAmount !== null && changeAmount !== undefined
+      isCash && cashReceived !== null && cashReceived !== undefined
         ? `
-    <div class="row" style="font-size: 11px;">
-        <span>Kembalian</span>
+    <div class="pay-row">
+        <span>Tunai</span>
+        <span>${formatRp(cashReceived)}</span>
+    </div>
+    `
+        : ""
+    }
+    ${
+      isCash && changeAmount !== null && changeAmount !== undefined
+        ? `
+    <div class="pay-row">
+        <span>Kembali</span>
         <span>${formatRp(changeAmount)}</span>
     </div>
     `
@@ -166,8 +178,8 @@ export function printReceipt(order) {
     <div class="divider"></div>
 
     <div class="footer">
-        Terima kasih atas kunjungan Anda!<br>
-        Simpan struk ini sebagai bukti pembayaran
+        Terima kasih sudah makan<br>
+        di Lawang Sewu!
     </div>
 
     <script>
