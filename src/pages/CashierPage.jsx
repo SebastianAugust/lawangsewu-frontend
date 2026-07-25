@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { getMenus, getCategories } from "../api/menu";
 import { createOrder, getOrders } from "../api/order";
-import { BASE_URL } from "../api/axios";
 import BluetoothPrinterButton from "../components/BluetoothPrinterButton";
 import MainLayout from "../layouts/MainLayout";
 import {
@@ -286,8 +285,6 @@ function CashierPage() {
     }
     return `Rp ${menu.price.toLocaleString()}`;
   };
-
-  const getImageUrl = (image) => (image ? `${BASE_URL}/storage/${image}` : null);
 
   // Payment selector in the right panel — the only place the method is chosen.
   const footerPaymentMethods = [
@@ -578,28 +575,9 @@ function CashierPage() {
                     </div>
                     <div className="flex flex-col">
                       {items.map((menu, menuIndex) => {
-                        const imgUrl = getImageUrl(menu.image);
                         const hasVariants = menu.variants?.length > 0;
-                        const thumb = (
-                          <div
-                            className="relative overflow-hidden shrink-0"
-                            style={{ width: 44, height: 44, borderRadius: 10, background: "#eef2f7" }}
-                          >
-                            {imgUrl ? (
-                              <img
-                                src={imgUrl}
-                                alt={menu.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <UtensilsCrossed style={{ width: 19, height: 19, color: "#93a8c4" }} />
-                              </div>
-                            )}
-                          </div>
-                        );
 
-                        // Menu WITHOUT variants: thumb + name/price + inline qty control.
+                        // Menu WITHOUT variants: name/price + inline qty control.
                         if (!hasVariants) {
                           const qty = getCartQty(`${menu.id}`);
                           const isFirst = menu.id === firstMenuId;
@@ -618,7 +596,6 @@ function CashierPage() {
                                 borderBottom: "0.5px solid rgba(0,0,0,0.08)",
                               }}
                             >
-                              {thumb}
                               <div className="flex-1 min-w-0">
                                 <p
                                   className="truncate"
@@ -667,7 +644,7 @@ function CashierPage() {
                           );
                         }
 
-                        // Menu WITH variants: main row (thumb + name only), then each
+                        // Menu WITH variants: main row (name only), then each
                         // variant as an indented sub-row with its own qty control.
                         return (
                           <div
@@ -682,7 +659,6 @@ function CashierPage() {
                               className="flex items-center gap-3"
                               style={{ paddingTop: 12, paddingBottom: 6 }}
                             >
-                              {thumb}
                               <div className="flex-1 min-w-0">
                                 <p
                                   className="truncate"
