@@ -188,8 +188,8 @@ function BranchManagePage() {
 
       {/* Form modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md animate-slide-up">
+        <div className="backdrop-enter fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="modal-enter bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <h3 className="font-display font-bold text-slate-900">
                 {editing ? "Edit Cabang" : "Tambah Cabang"}

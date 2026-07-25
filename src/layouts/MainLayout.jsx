@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ShoppingCart,
@@ -42,6 +43,27 @@ function MainLayout({ children }) {
   const isActive = (path) => location.pathname === path;
   const initial = (userName || "U").charAt(0).toUpperCase();
 
+  // Sliding active pill. The pill is one absolutely-positioned element that
+  // moves to sit behind whichever tab is active, so switching tabs reads as
+  // one continuous motion instead of two separate background swaps.
+  const tabsRef = useRef(null);
+  const tabRefs = useRef({});
+  const [pill, setPill] = useState({ left: 0, width: 0, ready: false });
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = tabRefs.current[location.pathname];
+      if (!el || !tabsRef.current) {
+        setPill((p) => ({ ...p, ready: false }));
+        return;
+      }
+      setPill({ left: el.offsetLeft, width: el.offsetWidth, ready: true });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [location.pathname, role]);
+
   return (
     <div className="min-h-screen bg-slate-50">
       <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
@@ -75,7 +97,27 @@ function MainLayout({ children }) {
               </div>
             </Link>
 
-            <div className="flex items-center gap-1 overflow-x-auto">
+            <div
+              ref={tabsRef}
+              className="relative flex items-center gap-1 overflow-x-auto"
+            >
+              {/* Sliding pill — sits behind the active tab and glides between
+                  tabs. aria-hidden: purely decorative, the Link carries state. */}
+              <span
+                aria-hidden="true"
+                className="absolute pointer-events-none"
+                style={{
+                  left: pill.left,
+                  width: pill.width,
+                  top: 0,
+                  bottom: 0,
+                  background: "#eef2f7",
+                  borderRadius: 8,
+                  opacity: pill.ready ? 1 : 0,
+                  transition:
+                    "left 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), width 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                }}
+              />
               {navLinks
                 .filter((link) => link.roles.includes(role))
                 .map((link) => {
@@ -86,13 +128,28 @@ function MainLayout({ children }) {
                       key={link.to}
                       to={link.to}
                       title={link.label}
+                      ref={(el) => {
+                        tabRefs.current[link.to] = el;
+                      }}
                       data-tour={`nav-${link.to.replace("/", "") || "kasir"}`}
-                      className={`flex items-center gap-2 whitespace-nowrap ${
+                      className={`relative z-10 flex items-center gap-2 whitespace-nowrap ${
                         active
-                          ? "bg-[#eef2f7] text-[#1e3a5f] font-semibold"
-                          : "text-[#94a3b8] hover:text-slate-700 hover:bg-slate-50 font-medium"
+                          ? "text-[#1e3a5f] font-semibold"
+                          : "text-[#94a3b8] hover:text-slate-700 font-medium"
                       }`}
-                      style={{ fontSize: 12, padding: "5px 12px", borderRadius: 8 }}
+                      style={{
+                        fontSize: 12,
+                        padding: "5px 12px",
+                        borderRadius: 8,
+                        transition:
+                          "color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!active) e.currentTarget.style.backgroundColor = "#f8fafc";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "";
+                      }}
                     >
                       <Icon className="w-4 h-4 shrink-0" strokeWidth={2} />
                       <span className="hidden md:inline">{link.label}</span>
@@ -143,7 +200,14 @@ function MainLayout({ children }) {
           </div>
         </div>
       </nav>
-      <main className="p-4 sm:p-6 max-w-screen-2xl mx-auto">{children}</main>
+      {/* key on the path remounts this wrapper on every navigation, which
+          re-fires the enter animation. */}
+      <main
+        key={location.pathname}
+        className="page-enter p-4 sm:p-6 max-w-screen-2xl mx-auto"
+      >
+        {children}
+      </main>
     </div>
   );
 }

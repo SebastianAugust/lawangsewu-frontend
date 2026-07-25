@@ -25,6 +25,8 @@ function MenuManagePage() {
   const [menus, setMenus] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  // Row currently playing its removal animation (presentation only).
+  const [removingId, setRemovingId] = useState(null);
   const [editingMenu, setEditingMenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
@@ -185,7 +187,13 @@ function MenuManagePage() {
   const handleDelete = async (id) => {
     if (!confirm("Yakin hapus menu ini?")) return;
     await deleteMenu(id);
-    loadData();
+    // Play the row's exit before refetching, so it collapses instead of
+    // vanishing. Purely visual — the delete already succeeded.
+    setRemovingId(id);
+    setTimeout(() => {
+      setRemovingId(null);
+      loadData();
+    }, 200);
   };
 
   const handleToggleAvailable = async (menu) => {
@@ -241,7 +249,7 @@ function MenuManagePage() {
       {showForm && (
         <div
           ref={formRef}
-          className="bg-white rounded-2xl border border-slate-200/70 shadow-sm mb-6 overflow-hidden animate-slide-up"
+          className="slide-down-enter bg-white rounded-2xl border border-slate-200/70 shadow-sm mb-6 overflow-hidden"
         >
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-50 border border-blue-200 rounded flex items-center justify-center">
@@ -504,10 +512,11 @@ function MenuManagePage() {
       {/* Card list — visible on <lg */}
       {filteredMenus.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden">
-          {filteredMenus.map((menu) => (
+          {filteredMenus.map((menu, i) => (
             <div
               key={menu.id}
-              className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4"
+              className={`${removingId === menu.id ? "row-collapse" : "stagger-item"} bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4`}
+              style={{ "--i": i }}
             >
               <div className="flex items-start gap-3 mb-3">
                 {menu.image ? (
@@ -617,10 +626,11 @@ function MenuManagePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredMenus.map((menu) => (
+              {filteredMenus.map((menu, i) => (
                 <tr
                   key={menu.id}
-                  className="border-t border-slate-100 hover:bg-stone-50/50 transition"
+                  className={`${removingId === menu.id ? "row-collapse" : "stagger-item"} border-t border-slate-100 hover:bg-stone-50/50`}
+                  style={{ "--i": i }}
                 >
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">

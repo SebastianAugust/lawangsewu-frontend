@@ -947,6 +947,9 @@ function DashboardPage() {
         </div>
       </div>
 
+      {/* key on the tab makes the whole panel remount, so switching
+          periods cross-fades instead of snapping. */}
+      <div key={tab} className="fade-swap">
       {/* ============ DAILY TAB ============ */}
       {tab === "daily" && (
         <div data-tour="dashboard-content">
@@ -1000,7 +1003,7 @@ function DashboardPage() {
                 />
               )}
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
                   icon={DollarSign}
                   label="Pendapatan"
@@ -1280,7 +1283,7 @@ function DashboardPage() {
                 />
               )}
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
                   icon={DollarSign}
                   label="Total Pendapatan"
@@ -1599,7 +1602,7 @@ function DashboardPage() {
                 />
               )}
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="stagger-grid grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <StatCard
                   icon={DollarSign}
                   label="Total Pendapatan"
@@ -1902,6 +1905,7 @@ function DashboardPage() {
           )}
         </>
       )}
+      </div>
     </MainLayout>
   );
 }

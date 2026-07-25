@@ -9,12 +9,8 @@ import {
   ShoppingBag,
   Plus,
   Minus,
-  Pencil,
-  Trash2,
   CheckCircle2,
   X,
-  Wallet,
-  Smartphone,
   UtensilsCrossed,
   Tag,
   User,
@@ -32,21 +28,33 @@ function CashierPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const searchInputRef = useRef(null);
 
-  const [activeMenu, setActiveMenu] = useState(null);
-  const [inputQty, setInputQty] = useState(1);
-  const [inputVariant, setInputVariant] = useState(null);
-
-  const [editingCartKey, setEditingCartKey] = useState(null);
-  const [editQty, setEditQty] = useState(1);
-  const [editVariant, setEditVariant] = useState(null);
-
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [cashReceived, setCashReceived] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const [lastOrder, setLastOrder] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
+
+  // ───── Animation bookkeeping (presentation only, never touches cart data) ─────
+  // Menu rows that should flash right now, keyed by cart_key.
+  const [flashRows, setFlashRows] = useState({});
+  // Cart lines currently sliding out; kept rendered until the exit finishes.
+  const [exitingKeys, setExitingKeys] = useState([]);
+  // Bumped whenever the total changes, to retrigger the colour flash.
+  const [totalPulse, setTotalPulse] = useState(0);
+  const [badgePulse, setBadgePulse] = useState(0);
+  const prevTotalRef = useRef(0);
+  const prevItemsRef = useRef(0);
+
+  const markFlash = (cartKey) => {
+    setFlashRows((prev) => ({ ...prev, [cartKey]: (prev[cartKey] || 0) + 1 }));
+    setTimeout(() => {
+      setFlashRows((prev) => {
+        const next = { ...prev };
+        delete next[cartKey];
+        return next;
+      });
+    }, 320);
+  };
 
   useEffect(() => {
     getMenus().then((res) => setMenus(res.data));
@@ -91,24 +99,23 @@ function CashierPage() {
     });
   }
 
-  const handleMenuClick = (menu) => {
-    if (activeMenu?.id === menu.id) {
-      setActiveMenu(null);
-      return;
-    }
-    setActiveMenu(menu);
-    setInputQty(1);
-    setInputVariant(menu.variants?.length > 0 ? menu.variants[0] : null);
-    window.dispatchEvent(new Event("app:menu-clicked"));
-  };
+  // First menu row overall — carries the data-tour="menu-active-panel" anchor
+  // that the guided tour highlights (the old "active panel" no longer exists).
+  const firstMenuId = menusByCategory[0]?.items[0]?.id;
 
-  const handleAddToCart = () => {
-    if (!activeMenu) return;
-    if (activeMenu.variants?.length > 0 && !inputVariant) return;
-    const variant = inputVariant;
-    const cartKey = variant ? `${activeMenu.id}-${variant.id}` : `${activeMenu.id}`;
-    const price = variant ? variant.price : activeMenu.price;
-    const displayName = variant ? `${activeMenu.name} (${variant.name})` : activeMenu.name;
+  // Cart key convention: "<menuId>" for plain menus, "<menuId>-<variantId>"
+  // for a specific variant. Each key is an independent cart line.
+  const cartKeyFor = (menu, variant) =>
+    variant ? `${menu.id}-${variant.id}` : `${menu.id}`;
+
+  const getCartQty = (cartKey) =>
+    cart.find((item) => item.cart_key === cartKey)?.quantity || 0;
+
+  // + control: add one of this menu/variant to the cart (0→1, 1→2, ...).
+  const incrementItem = (menu, variant) => {
+    const cartKey = cartKeyFor(menu, variant);
+    const price = variant ? variant.price : menu.price;
+    const displayName = variant ? `${menu.name} (${variant.name})` : menu.name;
     const existing = cart.find((item) => item.cart_key === cartKey);
     if (existing) {
       setCart(
@@ -116,8 +123,8 @@ function CashierPage() {
           item.cart_key === cartKey
             ? {
                 ...item,
-                quantity: item.quantity + inputQty,
-                subtotal: (item.quantity + inputQty) * price,
+                quantity: item.quantity + 1,
+                subtotal: (item.quantity + 1) * item.price,
               }
             : item,
         ),
@@ -127,109 +134,79 @@ function CashierPage() {
         ...cart,
         {
           cart_key: cartKey,
-          menu_id: activeMenu.id,
+          menu_id: menu.id,
           menu_variant_id: variant?.id || null,
           variant_name: variant?.name || null,
           name: displayName,
           price,
-          quantity: inputQty,
-          subtotal: price * inputQty,
+          quantity: 1,
+          subtotal: price,
         },
       ]);
     }
-    setActiveMenu(null);
-    setInputQty(1);
-    setInputVariant(null);
+    // Tapping + cancels a pending exit so the line stops fading out.
+    setExitingKeys((keys) => keys.filter((k) => k !== cartKey));
+    markFlash(cartKey);
+    // Tour still expects the two legacy menu events; both fire on +, so the
+    // tutorial advances as the user taps + (once per step) through the flow.
+    window.dispatchEvent(new Event("app:menu-clicked"));
     window.dispatchEvent(new Event("app:added-to-cart"));
   };
 
-  const handleStartEdit = (item) => {
-    setEditingCartKey(item.cart_key);
-    setEditQty(item.quantity);
-    const menu = menus.find((m) => m.id === item.menu_id);
-    setEditVariant(
-      menu?.variants?.length > 0
-        ? menu.variants.find((v) => v.id === item.menu_variant_id) || menu.variants[0]
-        : null,
-    );
-  };
-
-  const handleSaveEdit = (item) => {
-    const menu = menus.find((m) => m.id === item.menu_id);
-    if (menu?.variants?.length > 0 && editVariant) {
-      const newKey = `${item.menu_id}-${editVariant.id}`;
-      if (newKey !== item.cart_key) {
-        const existing = cart.find(
-          (c) => c.cart_key === newKey && c.cart_key !== item.cart_key,
-        );
-        if (existing) {
-          setCart(
-            cart
-              .map((c) =>
-                c.cart_key === newKey
-                  ? {
-                      ...c,
-                      quantity: c.quantity + editQty,
-                      subtotal: (c.quantity + editQty) * c.price,
-                    }
-                  : c,
-              )
-              .filter((c) => c.cart_key !== item.cart_key),
-          );
-        } else {
-          setCart(
-            cart.map((c) =>
-              c.cart_key === item.cart_key
-                ? {
-                    ...c,
-                    cart_key: newKey,
-                    menu_variant_id: editVariant.id,
-                    variant_name: editVariant.name,
-                    name: `${menu.name} (${editVariant.name})`,
-                    price: editVariant.price,
-                    quantity: editQty,
-                    subtotal: editQty * editVariant.price,
-                  }
-                : c,
-            ),
-          );
-        }
-      } else {
-        setCart(
-          cart.map((c) =>
-            c.cart_key === item.cart_key
-              ? { ...c, quantity: editQty, subtotal: editQty * c.price }
-              : c,
-          ),
-        );
-      }
+  // - control: remove one; at qty 1 the line is dropped from the cart entirely.
+  const decrementItem = (menu, variant) => {
+    const cartKey = cartKeyFor(menu, variant);
+    const existing = cart.find((item) => item.cart_key === cartKey);
+    if (!existing) return;
+    if (existing.quantity <= 1) {
+      // Let the cart line play its exit before the data is dropped. The
+      // removal itself is unchanged — only deferred by the animation length.
+      setExitingKeys((keys) => [...keys, cartKey]);
+      setTimeout(() => {
+        setCart((c) => {
+          // If the user tapped + again mid-exit, the line is wanted after all.
+          const cur = c.find((i) => i.cart_key === cartKey);
+          if (cur && cur.quantity > 1) return c;
+          return c.filter((item) => item.cart_key !== cartKey);
+        });
+        setExitingKeys((keys) => keys.filter((k) => k !== cartKey));
+      }, 150);
     } else {
       setCart(
-        cart.map((c) =>
-          c.cart_key === item.cart_key
-            ? { ...c, quantity: editQty, subtotal: editQty * c.price }
-            : c,
+        cart.map((item) =>
+          item.cart_key === cartKey
+            ? {
+                ...item,
+                quantity: item.quantity - 1,
+                subtotal: (item.quantity - 1) * item.price,
+              }
+            : item,
         ),
       );
     }
-    setEditingCartKey(null);
   };
 
-  const removeFromCart = (cartKey) =>
-    setCart(cart.filter((item) => item.cart_key !== cartKey));
   const totalPrice = cart.reduce((sum, item) => sum + item.subtotal, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleProceedToPayment = () => {
-    if (cart.length === 0) return;
-    setShowConfirmation(true);
-    setPaymentMethod("cash");
-    setCashReceived("");
-    window.dispatchEvent(new Event("app:pay-clicked"));
-  };
+  // Flash the total when it changes; pop the badge only when the count grows.
+  useEffect(() => {
+    if (prevTotalRef.current !== totalPrice && totalPrice > 0) {
+      setTotalPulse((n) => n + 1);
+    }
+    prevTotalRef.current = totalPrice;
+  }, [totalPrice]);
 
+  useEffect(() => {
+    if (totalItems > prevItemsRef.current) setBadgePulse((n) => n + 1);
+    prevItemsRef.current = totalItems;
+  }, [totalItems]);
+
+  // "Bayar" submits straight away — no confirmation step. The payment method
+  // comes from the right-panel selector as-is.
   const handleSubmitOrder = async () => {
-    if (submitting) return;
+    if (submitting || cart.length === 0) return;
+    window.dispatchEvent(new Event("app:pay-clicked"));
     setSubmitting(true);
     try {
       const orderData = {
@@ -242,7 +219,11 @@ function CashierPage() {
           subtotal: item.subtotal,
         })),
         payment_method: paymentMethod,
-        cash_received: paymentMethod === "cash" ? parseInt(cashReceived) : null,
+        // Tanpa langkah konfirmasi tidak ada nominal yang diketik kasir, tapi
+        // backend mewajibkan cash_received saat metode cash
+        // (OrderController: required_if:payment_method,cash). Kirim uang pas —
+        // transaksi tercatat lunas dan kembaliannya 0.
+        cash_received: paymentMethod === "cash" ? totalPrice : null,
       };
       const response = await createOrder(orderData);
       const newOrder = response.data;
@@ -272,13 +253,13 @@ function CashierPage() {
         ...newOrder,
         cart: [...cart],
         customer_name: customerName,
-        cash_received: paymentMethod === "cash" ? parseInt(cashReceived) : null,
-        change_amount: paymentMethod === "cash" ? parseInt(cashReceived) - totalPrice : null,
+        cash_received: null,
+        change_amount: null,
         daily_sequence: dailySequence,
       });
       setCart([]);
       setCustomerName("");
-      setShowConfirmation(false);
+      setPaymentMethod("cash"); // back to default for the next order
       setShowReceipt(true);
       setSuccess(
         dailySequence
@@ -294,18 +275,6 @@ function CashierPage() {
     }
   };
 
-  const cashReceivedNum = parseInt(cashReceived) || 0;
-  const changeAmount = cashReceivedNum - totalPrice;
-  const canSubmit = paymentMethod !== "cash" || cashReceivedNum >= totalPrice;
-  const quickCashAmounts = [
-    totalPrice,
-    Math.ceil(totalPrice / 10000) * 10000,
-    Math.ceil(totalPrice / 50000) * 50000,
-    100000,
-  ]
-    .filter((v, i, a) => a.indexOf(v) === i && v >= totalPrice)
-    .slice(0, 4);
-
   const getMenuDisplayPrice = (menu) => {
     if (menu.variants?.length > 0) {
       const prices = menu.variants.map((v) => v.price);
@@ -320,17 +289,19 @@ function CashierPage() {
 
   const getImageUrl = (image) => (image ? `${BASE_URL}/storage/${image}` : null);
 
-  const paymentOptions = [
-    { value: "cash", label: "Tunai", icon: Wallet, color: "emerald" },
-    { value: "qris", label: "QRIS", icon: Smartphone, color: "blue" },
+  // Payment selector in the right panel — the only place the method is chosen.
+  const footerPaymentMethods = [
+    { value: "cash", label: "CASH" },
+    { value: "qris", label: "QRIS" },
+    { value: "transfer", label: "TRANSFER" },
   ];
 
   return (
     <MainLayout>
       {/* RECEIPT MODAL */}
       {showReceipt && lastOrder && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-slide-up">
-          <div data-tour="receipt-modal" className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+        <div className="backdrop-enter fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[60] p-4">
+          <div data-tour="receipt-modal" className="modal-enter bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
             <div className="bg-blue-900 p-6 text-center text-white relative overflow-hidden">
               <button
                 onClick={() => setShowReceipt(false)}
@@ -387,18 +358,23 @@ function CashierPage() {
                     {lastOrder.payment_method}
                   </span>
                 </div>
-                {lastOrder.payment_method === "cash" && (
-                  <>
-                    <div className="flex justify-between text-sm text-slate-600">
-                      <span>Tunai diterima</span>
-                      <span>Rp {lastOrder.cash_received?.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-sm font-semibold text-emerald-600">
-                      <span>Kembalian</span>
-                      <span>Rp {lastOrder.change_amount?.toLocaleString()}</span>
-                    </div>
-                  </>
-                )}
+                {/* Nominal tunai hanya tampil kalau memang tercatat. Sejak
+                    langkah konfirmasi dihapus, order baru tidak lagi
+                    menyimpannya — tanpa penjagaan ini barisnya jadi "Rp "
+                    kosong. Order lama yang punya nilainya tetap tampil. */}
+                {lastOrder.payment_method === "cash" &&
+                  lastOrder.cash_received != null && (
+                    <>
+                      <div className="flex justify-between text-sm text-slate-600">
+                        <span>Tunai diterima</span>
+                        <span>Rp {lastOrder.cash_received.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-semibold text-emerald-600">
+                        <span>Kembalian</span>
+                        <span>Rp {lastOrder.change_amount?.toLocaleString()}</span>
+                      </div>
+                    </>
+                  )}
               </div>
               <div className="mt-6 space-y-2">
                 <BluetoothPrinterButton order={lastOrder} />
@@ -407,160 +383,6 @@ function CashierPage() {
                   className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-sm font-semibold transition"
                 >
                   Tutup
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CONFIRMATION MODAL */}
-      {showConfirmation && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[60] p-4 animate-slide-up">
-          <div data-tour="payment-modal" className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-slate-100">
-              <div>
-                <h3 className="font-display text-lg font-bold text-slate-900">
-                  Konfirmasi Pembayaran
-                </h3>
-                {customerName && (
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    untuk <span className="font-semibold text-slate-700">{customerName}</span>
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => setShowConfirmation(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition"
-              >
-                <X className="w-4 h-4 text-slate-500" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <div className="bg-slate-50 rounded-2xl p-4 mb-5 max-h-44 overflow-y-auto">
-                {cart.map((item) => (
-                  <div key={item.cart_key} className="flex justify-between text-sm py-1">
-                    <span className="text-slate-600">
-                      {item.name}{" "}
-                      <span className="text-slate-400">×{item.quantity}</span>
-                    </span>
-                    <span className="font-medium text-slate-700">
-                      Rp {item.subtotal.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-                <div className="flex justify-between font-display font-bold text-base border-t border-slate-200 mt-2 pt-2">
-                  <span>Total</span>
-                  <span className="text-amber-600">
-                    Rp {totalPrice.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                Metode Pembayaran
-              </p>
-              <div className="grid grid-cols-3 gap-2 mb-5">
-                {paymentOptions.map((method) => {
-                  const Icon = method.icon;
-                  const active = paymentMethod === method.value;
-                  return (
-                    <button
-                      key={method.value}
-                      onClick={() => {
-                        setPaymentMethod(method.value);
-                        // Tutorial helper: auto-fill cash with exact total so
-                        // the "Konfirmasi Bayar" button activates immediately
-                        // and the user can proceed without typing nominal.
-                        if (
-                          method.value === "cash" &&
-                          window.__TOUR_MODE__ &&
-                          totalPrice > 0
-                        ) {
-                          setCashReceived(String(totalPrice));
-                        }
-                        window.dispatchEvent(new Event("app:payment-method-selected"));
-                      }}
-                      className={`relative py-3 px-2 rounded-xl text-sm font-semibold transition border-2 flex flex-col items-center gap-1.5 ${
-                        active
-                          ? "border-amber-500 bg-amber-50 text-amber-700 shadow-sm shadow-amber-500/10"
-                          : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" strokeWidth={2.2} />
-                      {method.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {paymentMethod === "cash" && (
-                <div className="mb-5">
-                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    Uang Diterima
-                  </p>
-                  <div className="relative mb-2">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-semibold text-sm">
-                      Rp
-                    </span>
-                    <input
-                      type="number"
-                      value={cashReceived}
-                      onChange={(e) => setCashReceived(e.target.value)}
-                      placeholder="0"
-                      className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pl-11 pr-4 py-3 text-lg font-bold focus:outline-none focus:border-amber-500 focus:bg-white transition"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {quickCashAmounts.map((amount) => (
-                      <button
-                        key={amount}
-                        onClick={() => setCashReceived(amount.toString())}
-                        className="bg-slate-100 hover:bg-amber-100 hover:text-amber-700 text-xs font-semibold py-2 rounded-lg transition text-slate-600"
-                      >
-                        {amount >= 1000 ? `${amount / 1000}k` : amount}
-                      </button>
-                    ))}
-                  </div>
-                  {cashReceivedNum > 0 && (
-                    <div
-                      className={`mt-3 p-3 rounded-xl text-sm font-semibold flex items-center justify-between ${
-                        changeAmount >= 0
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : "bg-rose-50 text-rose-600 border border-rose-200"
-                      }`}
-                    >
-                      <span>{changeAmount >= 0 ? "Kembalian" : "Kurang"}</span>
-                      <span className="font-display text-lg font-bold">
-                        Rp {Math.abs(changeAmount).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowConfirmation(false)}
-                  className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl hover:bg-slate-200 font-semibold transition"
-                >
-                  Batal
-                </button>
-                <button
-                  data-tour="payment-confirm"
-                  onClick={handleSubmitOrder}
-                  disabled={!canSubmit || submitting}
-                  className={`flex-1 py-3 rounded-xl font-semibold transition shadow-sm flex items-center justify-center gap-2 ${
-                    canSubmit && !submitting
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-500/20"
-                      : "bg-slate-300 text-slate-500 cursor-not-allowed"
-                  }`}
-                >
-                  {submitting && (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  )}
-                  {submitting ? "Memproses..." : "Konfirmasi Bayar"}
                 </button>
               </div>
             </div>
@@ -684,7 +506,8 @@ function CashierPage() {
                 padding: "6px 16px",
                 borderRadius: 100,
                 whiteSpace: "nowrap",
-                transition: "all 0.15s ease",
+                transition:
+                  "background-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                 ...(active
                   ? { background: "#1e3a5f", color: "#ffffff", border: "0.5px solid transparent" }
                   : { background: "#ffffff", color: "#64748b", border: "0.5px solid rgba(0,0,0,0.1)" }),
@@ -693,6 +516,7 @@ function CashierPage() {
                 <>
                   <button
                     onClick={() => setSelectedCategory(null)}
+                    className="press-scale"
                     style={pillStyle(!selectedCategory)}
                   >
                     Semua
@@ -701,6 +525,7 @@ function CashierPage() {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategory(cat.id)}
+                      className="press-scale"
                       style={pillStyle(selectedCategory === cat.id)}
                     >
                       {cat.name}
@@ -722,7 +547,7 @@ function CashierPage() {
               <div className="space-y-6">
                 {menusByCategory.map(({ category, items }) => (
                   <section key={category.id}>
-                    <div className="flex items-center mb-3" style={{ gap: 6 }}>
+                    <div className="flex items-center mb-3" style={{ gap: 6, paddingTop: 10 }}>
                       <Tag
                         style={{ width: 13, height: 13, color: "#1e3a5f" }}
                       />
@@ -751,146 +576,178 @@ function CashierPage() {
                       </span>
                       <div className="flex-1 h-px bg-slate-200/70 ml-2" />
                     </div>
-                    <div className="grid grid-cols-4 gap-3">
-                      {items.map((menu) => {
-                        const isMenuActive = activeMenu?.id === menu.id;
+                    <div className="flex flex-col">
+                      {items.map((menu, menuIndex) => {
                         const imgUrl = getImageUrl(menu.image);
-                        return (
-                          <div key={menu.id} className="flex flex-col">
-                            <button
-                              onClick={() => handleMenuClick(menu)}
-                              className={`group w-full bg-white text-left transition-all duration-150 overflow-hidden ${
-                                isMenuActive
-                                  ? "border-[1.5px] border-blue-500 ring-[3px] ring-blue-500/10"
-                                  : "border border-black/[0.06] hover:-translate-y-0.5 hover:shadow-[0_6px_16px_rgba(0,0,0,0.09)]"
-                              }`}
-                              style={{ borderRadius: 12 }}
-                            >
-                              <div
-                                className="relative overflow-hidden"
-                                style={{ height: 140, width: "100%", background: "#eef2f7" }}
-                              >
-                                {imgUrl ? (
-                                  <img
-                                    src={imgUrl}
-                                    alt={menu.name}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <UtensilsCrossed
-                                      style={{ width: 20, height: 20, color: "#93a8c4" }}
-                                    />
-                                  </div>
-                                )}
-                                {menu.variants?.length > 0 && (
-                                  <span
-                                    className="absolute backdrop-blur-sm"
-                                    style={{
-                                      top: 8,
-                                      right: 8,
-                                      background: "rgba(255,255,255,0.92)",
-                                      color: "#1e3a5f",
-                                      fontSize: 9,
-                                      fontWeight: 600,
-                                      borderRadius: 5,
-                                      padding: "2px 6px",
-                                      letterSpacing: "0.2px",
-                                    }}
-                                  >
-                                    {menu.variants.length} varian
-                                  </span>
-                                )}
+                        const hasVariants = menu.variants?.length > 0;
+                        const thumb = (
+                          <div
+                            className="relative overflow-hidden shrink-0"
+                            style={{ width: 44, height: 44, borderRadius: 10, background: "#eef2f7" }}
+                          >
+                            {imgUrl ? (
+                              <img
+                                src={imgUrl}
+                                alt={menu.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <UtensilsCrossed style={{ width: 19, height: 19, color: "#93a8c4" }} />
                               </div>
-                              <div style={{ padding: "8px 10px 10px" }}>
+                            )}
+                          </div>
+                        );
+
+                        // Menu WITHOUT variants: thumb + name/price + inline qty control.
+                        if (!hasVariants) {
+                          const qty = getCartQty(`${menu.id}`);
+                          const isFirst = menu.id === firstMenuId;
+                          return (
+                            <div
+                              key={menu.id}
+                              // Stagger key includes the query so re-filtering
+                              // replays the entrance for the new result set.
+                              className={`stagger-item flex items-center gap-3 ${
+                                flashRows[`${menu.id}`] ? "row-flash" : ""
+                              }`}
+                              style={{
+                                "--i": menuIndex,
+                                paddingTop: 12,
+                                paddingBottom: 12,
+                                borderBottom: "0.5px solid rgba(0,0,0,0.08)",
+                              }}
+                            >
+                              {thumb}
+                              <div className="flex-1 min-w-0">
                                 <p
-                                  className="line-clamp-2"
-                                  style={{
-                                    fontSize: 12,
-                                    fontWeight: 500,
-                                    color: "#1e293b",
-                                    letterSpacing: "-0.1px",
-                                    lineHeight: 1.25,
-                                  }}
+                                  className="truncate"
+                                  style={{ fontSize: 15, fontWeight: 500, color: "#1e293b", letterSpacing: "-0.1px" }}
                                 >
                                   {menu.name}
                                 </p>
-                                <p
-                                  style={{
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    color: "#2563eb",
-                                    marginTop: 4,
-                                  }}
-                                >
+                                <p style={{ fontSize: 13, fontWeight: 600, color: "#2563eb", marginTop: 2 }}>
                                   {getMenuDisplayPrice(menu)}
                                 </p>
                               </div>
-                            </button>
+                              <div
+                                data-tour={isFirst ? "menu-active-panel" : undefined}
+                                className="flex items-center gap-2 shrink-0"
+                              >
+                                <button
+                                  onClick={() => decrementItem(menu, null)}
+                                  disabled={qty === 0}
+                                  className="press-scale flex items-center justify-center rounded-full shrink-0"
+                                  style={{
+                                    width: 32, height: 32, fontSize: 18,
+                                    background: "#ffffff", border: "0.5px solid rgba(0,0,0,0.1)", color: "#475569",
+                                    opacity: qty === 0 ? 0.4 : 1, cursor: qty === 0 ? "not-allowed" : "pointer",
+                                  }}
+                                >
+                                  <Minus style={{ width: 18, height: 18 }} strokeWidth={2.5} />
+                                </button>
+                                {/* key={qty} remounts the span so the pop
+                                    replays on every change. */}
+                                <span
+                                  key={qty}
+                                  className="qty-pop text-center font-bold tabular-nums"
+                                  style={{ fontSize: 16, minWidth: 20, color: "#1e293b" }}
+                                >
+                                  {qty}
+                                </span>
+                                <button
+                                  onClick={() => incrementItem(menu, null)}
+                                  className="press-scale flex items-center justify-center rounded-full shrink-0"
+                                  style={{ width: 32, height: 32, fontSize: 18, background: "#1e3a5f", color: "#ffffff" }}
+                                >
+                                  <Plus style={{ width: 18, height: 18 }} strokeWidth={2.5} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
 
-                            {isMenuActive && (
-                              <div data-tour="menu-active-panel" className="bg-white border border-amber-200 rounded-2xl shadow-xl shadow-amber-500/10 mt-2 p-4 animate-[fadeIn_0.15s_ease-out]">
-                                {menu.variants?.length > 0 && (
-                                  <div className="mb-3">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-                                      Pilih Varian
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-1.5">
-                                      {menu.variants.map((v) => (
-                                        <button
-                                          key={v.id}
-                                          onClick={() => setInputVariant(v)}
-                                          className={`px-3 py-2 rounded-lg text-xs font-medium transition border ${
-                                            inputVariant?.id === v.id
-                                              ? "border-amber-500 bg-amber-50 text-amber-700"
-                                              : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
-                                          }`}
-                                        >
-                                          <span className="block font-semibold">{v.name}</span>
-                                          <span className="block text-[10px] mt-0.5 opacity-75">
-                                            Rp {v.price.toLocaleString()}
-                                          </span>
-                                        </button>
-                                      ))}
+                        // Menu WITH variants: main row (thumb + name only), then each
+                        // variant as an indented sub-row with its own qty control.
+                        return (
+                          <div
+                            key={menu.id}
+                            className="stagger-item"
+                            style={{
+                              "--i": menuIndex,
+                              borderBottom: "0.5px solid rgba(0,0,0,0.08)",
+                            }}
+                          >
+                            <div
+                              className="flex items-center gap-3"
+                              style={{ paddingTop: 12, paddingBottom: 6 }}
+                            >
+                              {thumb}
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className="truncate"
+                                  style={{ fontSize: 15, fontWeight: 500, color: "#1e293b", letterSpacing: "-0.1px" }}
+                                >
+                                  {menu.name}
+                                </p>
+                              </div>
+                            </div>
+                            <div style={{ paddingLeft: 56, paddingBottom: 6 }}>
+                              {menu.variants.map((v, vi) => {
+                                const qty = getCartQty(`${menu.id}-${v.id}`);
+                                const isFirst = menu.id === firstMenuId && vi === 0;
+                                return (
+                                  <div
+                                    key={v.id}
+                                    className={`flex items-center gap-2 ${
+                                      flashRows[`${menu.id}-${v.id}`] ? "row-flash" : ""
+                                    }`}
+                                    style={{ paddingTop: 12, paddingBottom: 12 }}
+                                  >
+                                    <span
+                                      className="flex-1 min-w-0 truncate"
+                                      style={{ fontSize: 14, fontWeight: 500, color: "#475569" }}
+                                    >
+                                      {v.name}
+                                    </span>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "#2563eb" }}>
+                                      Rp {v.price.toLocaleString()}
+                                    </span>
+                                    <div
+                                      data-tour={isFirst ? "menu-active-panel" : undefined}
+                                      className="flex items-center gap-2 shrink-0"
+                                    >
+                                      <button
+                                        onClick={() => decrementItem(menu, v)}
+                                        disabled={qty === 0}
+                                        className="press-scale flex items-center justify-center rounded-full shrink-0"
+                                        style={{
+                                          width: 32, height: 32, fontSize: 18,
+                                          background: "#ffffff", border: "0.5px solid rgba(0,0,0,0.1)", color: "#475569",
+                                          opacity: qty === 0 ? 0.4 : 1, cursor: qty === 0 ? "not-allowed" : "pointer",
+                                        }}
+                                      >
+                                        <Minus style={{ width: 18, height: 18 }} strokeWidth={2.5} />
+                                      </button>
+                                      <span
+                                        key={qty}
+                                        className="qty-pop text-center font-bold tabular-nums"
+                                        style={{ fontSize: 16, minWidth: 20, color: "#1e293b" }}
+                                      >
+                                        {qty}
+                                      </span>
+                                      <button
+                                        onClick={() => incrementItem(menu, v)}
+                                        className="press-scale flex items-center justify-center rounded-full shrink-0"
+                                        style={{ width: 32, height: 32, fontSize: 18, background: "#1e3a5f", color: "#ffffff" }}
+                                      >
+                                        <Plus style={{ width: 18, height: 18 }} strokeWidth={2.5} />
+                                      </button>
                                     </div>
                                   </div>
-                                )}
-                                <div className="flex items-center gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => setInputQty(Math.max(1, inputQty - 1))}
-                                      className="flex items-center justify-center rounded-full shrink-0"
-                                      style={{ width: 22, height: 22, background: "#f1f5f9", color: "#475569" }}
-                                    >
-                                      <Minus className="w-3 h-3" strokeWidth={2.5} />
-                                    </button>
-                                    <input
-                                      type="number"
-                                      value={inputQty}
-                                      onChange={(e) =>
-                                        setInputQty(Math.max(1, parseInt(e.target.value) || 1))
-                                      }
-                                      className="text-center bg-transparent text-sm font-bold focus:outline-none"
-                                      style={{ width: 40 }}
-                                    />
-                                    <button
-                                      onClick={() => setInputQty(inputQty + 1)}
-                                      className="flex items-center justify-center rounded-full shrink-0"
-                                      style={{ width: 22, height: 22, background: "#f1f5f9", color: "#475569" }}
-                                    >
-                                      <Plus className="w-3 h-3" strokeWidth={2.5} />
-                                    </button>
-                                  </div>
-                                  <button
-                                    onClick={handleAddToCart}
-                                    className="flex-1 bg-blue-900 hover:bg-blue-800 text-white py-2.5 rounded text-xs font-semibold transition"
-                                  >
-                                    + Rp{" "}
-                                    {((inputVariant?.price || menu.price) * inputQty).toLocaleString()}
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                                );
+                              })}
+                            </div>
                           </div>
                         );
                       })}
@@ -905,6 +762,7 @@ function CashierPage() {
         {/* RIGHT — Cart (inline on lg+, drawer on <lg) */}
         <aside
           data-tour="cart"
+          style={{ paddingLeft: 8 }}
           className={`bg-white border border-slate-200/70 flex flex-col overflow-hidden transition-transform duration-200 ease-out
             lg:static lg:w-[360px] xl:w-[380px] lg:rounded-2xl lg:shadow-sm lg:translate-x-0
             fixed inset-y-0 right-0 z-50 w-full max-w-md shadow-2xl
@@ -924,7 +782,8 @@ function CashierPage() {
                 </h2>
                 {cart.length > 0 && (
                   <span
-                    className="rounded-full"
+                    key={badgePulse}
+                    className="badge-pop rounded-full"
                     style={{
                       background: "#eff6ff",
                       color: "#1d4ed8",
@@ -946,7 +805,7 @@ function CashierPage() {
               </button>
             </div>
             {success && (
-              <div className="mt-3 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-2 rounded-lg border border-emerald-200 flex items-center gap-2">
+              <div className="toast-enter mt-3 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-2 rounded-lg border border-emerald-200 flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 {success}
               </div>
@@ -967,119 +826,37 @@ function CashierPage() {
             ) : (
               <div className="space-y-1">
                 {cart.map((item) => (
-                  <div key={item.cart_key} className="group">
-                    {editingCartKey === item.cart_key ? (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 my-1">
-                        <p className="text-xs font-bold text-slate-800 mb-2">
-                          {menus.find((m) => m.id === item.menu_id)?.name}
-                        </p>
-                        {(() => {
-                          const menu = menus.find((m) => m.id === item.menu_id);
-                          if (menu?.variants?.length > 0) {
-                            return (
-                              <div className="mb-2">
-                                <div className="flex flex-wrap gap-1.5">
-                                  {menu.variants.map((v) => (
-                                    <button
-                                      key={v.id}
-                                      onClick={() => setEditVariant(v)}
-                                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition border ${
-                                        editVariant?.id === v.id
-                                          ? "border-amber-500 bg-amber-100 text-amber-700"
-                                          : "border-slate-200 bg-white text-slate-600"
-                                      }`}
-                                    >
-                                      {v.name} · Rp {v.price.toLocaleString()}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center bg-white rounded-lg border border-slate-200">
-                            <button
-                              onClick={() => setEditQty(Math.max(1, editQty - 1))}
-                              className="w-7 h-7 flex items-center justify-center text-slate-500"
-                            >
-                              <Minus className="w-3 h-3" strokeWidth={2.5} />
-                            </button>
-                            <input
-                              type="number"
-                              value={editQty}
-                              onChange={(e) =>
-                                setEditQty(Math.max(1, parseInt(e.target.value) || 1))
-                              }
-                              className="w-8 text-center text-xs font-bold bg-transparent focus:outline-none"
-                            />
-                            <button
-                              onClick={() => setEditQty(editQty + 1)}
-                              className="w-7 h-7 flex items-center justify-center text-slate-500"
-                            >
-                              <Plus className="w-3 h-3" strokeWidth={2.5} />
-                            </button>
-                          </div>
-                          <div className="flex gap-1.5">
-                            <button
-                              onClick={() => handleSaveEdit(item)}
-                              className="bg-amber-500 text-white px-3 py-1.5 rounded-md text-[11px] font-semibold hover:bg-amber-600 transition"
-                            >
-                              Simpan
-                            </button>
-                            <button
-                              onClick={() => setEditingCartKey(null)}
-                              className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded-md text-[11px] font-semibold hover:bg-slate-300 transition"
-                            >
-                              Batal
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-slate-50 transition">
-                        <div
-                          className="flex items-center justify-center shrink-0"
-                          style={{ width: 34, height: 34, background: "#eff6ff", borderRadius: 9 }}
-                        >
-                          <UtensilsCrossed style={{ width: 15, height: 15, color: "#2563eb" }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className="truncate"
-                            style={{ fontSize: 12, fontWeight: 500, color: "#1e293b" }}
-                          >
-                            {item.name}
-                          </p>
-                          <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
-                            {item.quantity} × Rp {item.price.toLocaleString()}
-                          </p>
-                        </div>
-                        <p
-                          className="whitespace-nowrap"
-                          style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}
-                        >
-                          Rp {item.subtotal.toLocaleString()}
-                        </p>
-                        <div className="flex gap-0.5 lg:opacity-60 lg:group-hover:opacity-100 transition">
-                          <button
-                            onClick={() => handleStartEdit(item)}
-                            className="w-9 h-9 flex items-center justify-center text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => removeFromCart(item.cart_key)}
-                            className="w-9 h-9 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-lg transition"
-                            title="Hapus"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                  <div
+                    key={item.cart_key}
+                    className={`flex items-center gap-3 py-2.5 px-2 ${
+                      exitingKeys.includes(item.cart_key)
+                        ? "cart-item-exit"
+                        : "cart-item-enter"
+                    }`}
+                  >
+                    <div
+                      className="flex items-center justify-center shrink-0"
+                      style={{ width: 34, height: 34, background: "#eff6ff", borderRadius: 9 }}
+                    >
+                      <UtensilsCrossed style={{ width: 15, height: 15, color: "#2563eb" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="truncate"
+                        style={{ fontSize: 12, fontWeight: 500, color: "#1e293b" }}
+                      >
+                        {item.name}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+                        ×{item.quantity}
+                      </p>
+                    </div>
+                    <p
+                      className="whitespace-nowrap"
+                      style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}
+                    >
+                      Rp {item.subtotal.toLocaleString()}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1088,6 +865,33 @@ function CashierPage() {
 
           {cart.length > 0 && (
             <div className="px-5 py-4 border-t border-slate-100 bg-stone-50/50">
+              <div className="flex mb-3" style={{ gap: 6 }}>
+                {footerPaymentMethods.map((m) => {
+                  const active = paymentMethod === m.value;
+                  return (
+                    <button
+                      key={m.value}
+                      onClick={() => {
+                        setPaymentMethod(m.value);
+                        window.dispatchEvent(new Event("app:payment-method-selected"));
+                      }}
+                      className="flex-1"
+                      style={{
+                        padding: "8px 4px",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        transition: "all 0.15s ease",
+                        ...(active
+                          ? { background: "#eff6ff", border: "1px solid #2563eb", color: "#1d4ed8" }
+                          : { background: "#ffffff", border: "0.5px solid rgba(0,0,0,0.1)", color: "#64748b" }),
+                      }}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
               <div className="relative mb-3">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -1109,15 +913,21 @@ function CashierPage() {
                   <span className="text-xs text-slate-500 font-medium uppercase tracking-wide">
                     Total Pembayaran
                   </span>
-                  <span className="font-display text-2xl font-bold text-slate-900">
+                  <span
+                    key={totalPulse}
+                    className="total-flash font-display text-2xl font-bold text-slate-900"
+                  >
                     Rp {totalPrice.toLocaleString()}
                   </span>
                 </div>
               </div>
               <button
                 data-tour="pay-button"
-                onClick={handleProceedToPayment}
-                className="w-full hover:bg-blue-800 text-white transition flex items-center justify-center gap-2"
+                onClick={handleSubmitOrder}
+                disabled={submitting}
+                className={`press-pay w-full hover:bg-blue-800 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 ${
+                  submitting ? "loading-pulse" : ""
+                }`}
                 style={{
                   background: "#1e3a5f",
                   borderRadius: 11,
@@ -1126,8 +936,12 @@ function CashierPage() {
                   padding: 12,
                 }}
               >
-                <ReceiptIcon className="w-4 h-4" />
-                Lanjut Bayar
+                {submitting ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <ReceiptIcon className="w-4 h-4" />
+                )}
+                {submitting ? "Memproses..." : "Bayar"}
               </button>
             </div>
           )}

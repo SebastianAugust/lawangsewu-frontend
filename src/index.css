@@ -84,6 +84,16 @@
     --ink-500: #64748b;
     --ink-400: #94a3b8;
     --hairline: rgba(0, 0, 0, 0.07);
+
+    /* ───── Motion tokens ─────
+       Every animation in the app pulls its easing and duration from here.
+       Nothing exceeds 300ms — motion is feedback, not decoration. */
+    --ease-out-apple: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-in-apple: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+    --dur-micro: 150ms;
+    --dur-base: 200ms;
+    --dur-large: 250ms;
 }
 
 *,
@@ -161,7 +171,7 @@ a,
 select,
 input,
 [role="button"] {
-    transition: all 0.15s ease;
+    transition: all 150ms var(--ease-out-apple);
 }
 
 /* ───── Batik utilities (kept for backward compat — neutralized) ───── */
@@ -209,7 +219,322 @@ input,
 }
 
 .animate-slide-up {
-    animation: slideUp 0.25s ease-out;
+    animation: slideUp var(--dur-large) var(--ease-out-apple);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Motion system — Apple/Arc feel: short, snappy, purposeful.
+   Durations and easings come from the tokens in :root. Every animation
+   below is opt-in via a class, so nothing moves unless asked to.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ───── Page transitions ───── */
+@keyframes pageEnter {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.page-enter {
+    animation: pageEnter var(--dur-base) var(--ease-out-apple);
+}
+
+/* ───── Enter / exit ───── */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+.cart-item-enter {
+    animation: slideInRight var(--dur-base) var(--ease-out-apple);
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+}
+.cart-item-exit {
+    animation: slideOutRight var(--dur-micro) var(--ease-in-apple) forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* Stagger children: set --i on each item, delay = i × 30ms. `both` keeps
+   items invisible during their delay instead of flashing in first. */
+.stagger-item {
+    animation: fadeInUp var(--dur-base) var(--ease-out-apple) both;
+    animation-delay: calc(var(--i, 0) * 30ms);
+}
+/* Dashboard stat cards step 50ms apart per spec. Driven by nth-child so the
+   grid container is the only thing that needs the class — the cards
+   themselves stay untouched. */
+.stagger-grid > * {
+    animation: fadeInUp var(--dur-base) var(--ease-out-apple) both;
+}
+.stagger-grid > *:nth-child(1) {
+    animation-delay: 0ms;
+}
+.stagger-grid > *:nth-child(2) {
+    animation-delay: 50ms;
+}
+.stagger-grid > *:nth-child(3) {
+    animation-delay: 100ms;
+}
+.stagger-grid > *:nth-child(n + 4) {
+    animation-delay: 150ms;
+}
+
+@keyframes fadeSwap {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+.fade-swap {
+    animation: fadeSwap var(--dur-micro) var(--ease-out-apple);
+}
+
+@keyframes slideDownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.slide-down-enter {
+    animation: slideDownFade var(--dur-base) var(--ease-out-apple);
+}
+
+/* ───── Pops & flashes ───── */
+@keyframes qtyPop {
+    from {
+        transform: scale(0.7);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+.qty-pop {
+    animation: qtyPop var(--dur-base) var(--ease-spring);
+}
+
+@keyframes badgePop {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+.badge-pop {
+    animation: badgePop var(--dur-base) var(--ease-spring);
+}
+
+@keyframes rowFlash {
+    0% {
+        background-color: #eff6ff;
+    }
+    60% {
+        background-color: #eff6ff;
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+.row-flash {
+    animation: rowFlash 300ms var(--ease-out-apple);
+}
+
+@keyframes totalFlash {
+    0% {
+        color: inherit;
+    }
+    30% {
+        color: #2563eb;
+    }
+    100% {
+        color: inherit;
+    }
+}
+.total-flash {
+    animation: totalFlash 300ms var(--ease-out-apple);
+}
+
+@keyframes softPulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+.loading-pulse {
+    animation: softPulse 900ms var(--ease-out-apple) infinite;
+}
+
+/* ───── Modals & backdrops ───── */
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+.modal-enter {
+    animation: modalIn var(--dur-base) var(--ease-spring);
+}
+
+@keyframes modalOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+.modal-exit {
+    animation: modalOut var(--dur-micro) var(--ease-in-apple) forwards;
+}
+
+@keyframes backdropIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+.backdrop-enter {
+    animation: backdropIn var(--dur-base) var(--ease-out-apple);
+}
+
+/* ───── Toast / alert ───── */
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.toast-enter {
+    animation: toastIn var(--dur-large) var(--ease-spring);
+}
+
+/* ───── Press feedback ─────
+   Applied to tap targets so they compress under the finger. Kept off
+   `:hover` so it never fires on touch devices without a real press. */
+.press-scale {
+    transition: transform var(--dur-micro) var(--ease-out-apple);
+}
+.press-scale:active {
+    transform: scale(0.92);
+}
+
+.press-pay {
+    transition:
+        transform var(--dur-micro) var(--ease-out-apple),
+        filter var(--dur-micro) var(--ease-out-apple);
+}
+.press-pay:hover:not(:disabled) {
+    transform: scale(1.01);
+    filter: brightness(1.08);
+}
+.press-pay:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 100ms;
+}
+
+/* ───── Expanding rows (riwayat) ─────
+   Runs on mount, so the panel can stay conditionally rendered — nothing
+   heavy inside it gets mounted while collapsed. max-height is animated
+   rather than height so the content still sizes itself; the value is an
+   upper bound, not a measurement. */
+@keyframes expandDown {
+    from {
+        max-height: 0;
+        opacity: 0;
+    }
+    to {
+        max-height: 1200px;
+        opacity: 1;
+    }
+}
+.expand-enter {
+    overflow: hidden;
+    animation: expandDown var(--dur-base) var(--ease-out-apple);
+}
+
+/* Row removal: fade out while collapsing away. `forwards` holds the
+   collapsed state until the list refetches and the row disappears. */
+@keyframes collapseUp {
+    from {
+        opacity: 1;
+        max-height: 400px;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        max-height: 0;
+        transform: scale(0.98);
+    }
+}
+.row-collapse {
+    overflow: hidden;
+    animation: collapseUp var(--dur-base) var(--ease-in-apple) forwards;
+}
+
+/* ───── Accessibility ─────
+   Respect the OS "reduce motion" setting. Everything still renders in
+   its final state — only the movement is dropped. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 ::-webkit-scrollbar {

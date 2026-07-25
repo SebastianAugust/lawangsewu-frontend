@@ -158,7 +158,7 @@ function OrderHistoryPage() {
         {/* Stats */}
         {orders.length > 0 && (
           <div data-tour="order-summary" className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-            <div className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm">
+            <div className="stagger-item bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm" style={{ "--i": 0 }}>
               <div className="flex items-center gap-2 mb-2">
                 <ShoppingBag className="w-4 h-4 text-blue-500" />
                 <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
@@ -172,7 +172,7 @@ function OrderHistoryPage() {
                 {completedCount} selesai
               </p>
             </div>
-            <div className="bg-blue-900 rounded-md p-5 text-white">
+            <div className="stagger-item bg-blue-900 rounded-md p-5 text-white" style={{ "--i": 1 }}>
               <p className="text-[11px] text-blue-200 font-bold uppercase tracking-wider mb-2">
                 Pendapatan
               </p>
@@ -181,7 +181,7 @@ function OrderHistoryPage() {
               </p>
               <p className="text-xs text-blue-200 mt-1">dari pesanan selesai</p>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm">
+            <div className="stagger-item bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm" style={{ "--i": 2 }}>
               <div className="flex items-center gap-2 mb-2">
                 <Ban className="w-4 h-4 text-rose-500" />
                 <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">
@@ -201,10 +201,11 @@ function OrderHistoryPage() {
         {/* Payment method breakdown */}
         {orders.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
-            {paymentBreakdown.map(({ label, value, icon: Icon, color }) => (
+            {paymentBreakdown.map(({ label, value, icon: Icon, color }, i) => (
               <div
                 key={label}
-                className="bg-white rounded-2xl border border-slate-200/70 p-4 shadow-sm"
+                className="stagger-item bg-white rounded-2xl border border-slate-200/70 p-4 shadow-sm"
+                style={{ "--i": i + 3 }}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Icon className="w-4 h-4" style={{ color }} />
@@ -294,15 +295,19 @@ function OrderHistoryPage() {
                         Rp {order.total_price.toLocaleString()}
                       </p>
                       <ChevronDown
-                        className={`w-4 h-4 text-slate-400 transition-transform ${
+                        className={`w-4 h-4 text-slate-400 ${
                           isExpanded ? "rotate-180" : ""
                         }`}
+                        style={{
+                          transition:
+                            "transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                        }}
                       />
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div className="px-5 pb-5 border-t border-slate-100">
+                    <div className="expand-enter px-5 pb-5 border-t border-slate-100">
                       <div className="py-3 space-y-1.5">
                         {order.items.map((item) => (
                           <div
