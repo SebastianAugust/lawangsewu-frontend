@@ -14,6 +14,9 @@ import {
   Tag,
   User,
   Receipt as ReceiptIcon,
+  Wallet,
+  Smartphone,
+  Landmark,
 } from "lucide-react";
 
 function CashierPage() {
@@ -28,6 +31,7 @@ function CashierPage() {
   const searchInputRef = useRef(null);
 
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [lastOrder, setLastOrder] = useState(null);
@@ -201,11 +205,25 @@ function CashierPage() {
     prevItemsRef.current = totalItems;
   }, [totalItems]);
 
-  // "Bayar" submits straight away — no confirmation step. The payment method
-  // comes from the right-panel selector as-is.
-  const handleSubmitOrder = async () => {
+  // "Bayar" hanya membuka ringkasan — kasir sering salah pencet metode di
+  // panel kanan, jadi transaksi baru diproses setelah dikonfirmasi di modal.
+  const handleOpenConfirmation = () => {
     if (submitting || cart.length === 0) return;
     window.dispatchEvent(new Event("app:pay-clicked"));
+    setShowConfirmation(true);
+  };
+
+  // "Ubah": tutup modal saja. Cart, nama pelanggan, dan metode tetap utuh —
+  // kasir tinggal pilih ulang metode di panel kanan lalu tekan Bayar lagi.
+  const handleChangePaymentMethod = () => {
+    if (submitting) return;
+    setShowConfirmation(false);
+  };
+
+  // Dipanggil dari tombol "Konfirmasi Bayar" di modal. Isi fungsinya sama
+  // persis seperti sebelumnya — hanya triggernya yang pindah.
+  const handleSubmitOrder = async () => {
+    if (submitting || cart.length === 0) return;
     setSubmitting(true);
     try {
       const orderData = {
@@ -218,7 +236,7 @@ function CashierPage() {
           subtotal: item.subtotal,
         })),
         payment_method: paymentMethod,
-        // Tanpa langkah konfirmasi tidak ada nominal yang diketik kasir, tapi
+        // Modal konfirmasi tidak meminta nominal tunai, tapi
         // backend mewajibkan cash_received saat metode cash
         // (OrderController: required_if:payment_method,cash). Kirim uang pas —
         // transaksi tercatat lunas dan kembaliannya 0.
@@ -259,6 +277,7 @@ function CashierPage() {
       setCart([]);
       setCustomerName("");
       setPaymentMethod("cash"); // back to default for the next order
+      setShowConfirmation(false);
       setShowReceipt(true);
       setSuccess(
         dailySequence
@@ -292,6 +311,37 @@ function CashierPage() {
     { value: "qris", label: "QRIS" },
     { value: "transfer", label: "TRANSFER" },
   ];
+
+  // Tampilan metode di modal konfirmasi. Warna dibedakan per metode supaya
+  // kasir langsung sadar kalau yang kepencet bukan yang dimaksud.
+  const paymentMethodBadges = {
+    cash: {
+      label: "CASH",
+      icon: Wallet,
+      bg: "#ecfdf5",
+      border: "#10b981",
+      text: "#047857",
+      soft: "#059669",
+    },
+    qris: {
+      label: "QRIS",
+      icon: Smartphone,
+      bg: "#eff6ff",
+      border: "#2563eb",
+      text: "#1d4ed8",
+      soft: "#2563eb",
+    },
+    transfer: {
+      label: "TRANSFER",
+      icon: Landmark,
+      bg: "#f5f3ff",
+      border: "#7c3aed",
+      text: "#6d28d9",
+      soft: "#7c3aed",
+    },
+  };
+  const activeBadge = paymentMethodBadges[paymentMethod] || paymentMethodBadges.cash;
+  const ActiveBadgeIcon = activeBadge.icon;
 
   return (
     <MainLayout>
@@ -355,8 +405,8 @@ function CashierPage() {
                     {lastOrder.payment_method}
                   </span>
                 </div>
-                {/* Nominal tunai hanya tampil kalau memang tercatat. Sejak
-                    langkah konfirmasi dihapus, order baru tidak lagi
+                {/* Nominal tunai hanya tampil kalau memang tercatat. Modal
+                    konfirmasi tidak meminta nominal, jadi order baru tidak
                     menyimpannya — tanpa penjagaan ini barisnya jadi "Rp "
                     kosong. Order lama yang punya nilainya tetap tampil. */}
                 {lastOrder.payment_method === "cash" &&
@@ -380,6 +430,206 @@ function CashierPage() {
                   className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-sm font-semibold transition"
                 >
                   Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAYMENT CONFIRMATION MODAL */}
+      {showConfirmation && (
+        <div className="backdrop-enter fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[55] p-4">
+          <div
+            data-tour="payment-modal"
+            className="modal-enter bg-white w-full max-w-md shadow-2xl overflow-hidden"
+            style={{ borderRadius: 20 }}
+          >
+            <div className="px-6 pt-6 pb-4 flex items-start justify-between border-b border-slate-100">
+              <div className="min-w-0">
+                <h3
+                  className="font-display"
+                  style={{ fontSize: 17, fontWeight: 700, color: "#1e3a5f" }}
+                >
+                  Konfirmasi Pembayaran
+                </h3>
+                <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+                  {customerName ? (
+                    <>
+                      untuk{" "}
+                      <span style={{ fontWeight: 600, color: "#475569" }}>
+                        {customerName}
+                      </span>
+                    </>
+                  ) : (
+                    "Periksa pesanan dan metode bayar sebelum diproses"
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={handleChangePaymentMethod}
+                disabled={submitting}
+                aria-label="Tutup konfirmasi"
+                className="press-scale w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition shrink-0 disabled:opacity-50"
+              >
+                <X className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Ringkasan pesanan */}
+              <div
+                className="mb-5 max-h-44 overflow-y-auto"
+                style={{ background: "#f8fafc", borderRadius: 14, padding: 16 }}
+              >
+                {cart.map((item) => (
+                  <div
+                    key={item.cart_key}
+                    className="flex justify-between items-baseline gap-3 py-1"
+                  >
+                    <span
+                      className="min-w-0"
+                      style={{ fontSize: 13, color: "#475569" }}
+                    >
+                      {item.name}{" "}
+                      <span style={{ color: "#94a3b8" }}>×{item.quantity}</span>
+                    </span>
+                    <span
+                      className="whitespace-nowrap tabular-nums"
+                      style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}
+                    >
+                      Rp {item.subtotal.toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+                <div
+                  className="flex justify-between items-baseline mt-2 pt-2"
+                  style={{ borderTop: "1px solid #e2e8f0" }}
+                >
+                  <span
+                    className="font-display"
+                    style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}
+                  >
+                    Total
+                  </span>
+                  <span
+                    className="font-display tabular-nums"
+                    style={{ fontSize: 20, fontWeight: 700, color: "#1e3a5f" }}
+                  >
+                    Rp {totalPrice.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Metode bayar — hanya ditampilkan, dipilihnya tetap di panel kanan */}
+              <p
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#94a3b8",
+                  letterSpacing: "0.6px",
+                  textTransform: "uppercase",
+                  marginBottom: 8,
+                }}
+              >
+                Metode Pembayaran
+              </p>
+              <div
+                className="flex items-center justify-between gap-3 mb-5"
+                style={{
+                  background: activeBadge.bg,
+                  border: `1.5px solid ${activeBadge.border}`,
+                  borderRadius: 14,
+                  padding: "14px 16px",
+                }}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className="flex items-center justify-center shrink-0"
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 11,
+                      background: "#ffffff",
+                    }}
+                  >
+                    <ActiveBadgeIcon
+                      style={{ width: 20, height: 20, color: activeBadge.soft }}
+                      strokeWidth={2.2}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p
+                      className="font-display truncate"
+                      style={{
+                        fontSize: 22,
+                        fontWeight: 700,
+                        color: activeBadge.text,
+                        letterSpacing: "0.5px",
+                        lineHeight: 1.15,
+                      }}
+                    >
+                      {activeBadge.label}
+                    </p>
+                    <p style={{ fontSize: 11, color: activeBadge.soft, marginTop: 2 }}>
+                      Pastikan metode sudah benar
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleChangePaymentMethod}
+                  disabled={submitting}
+                  className="press-scale shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: "#ffffff",
+                    border: `1px solid ${activeBadge.border}`,
+                    color: activeBadge.text,
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "6px 14px",
+                  }}
+                >
+                  Ubah
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowConfirmation(false)}
+                  disabled={submitting}
+                  className="press-scale flex-1 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  style={{
+                    color: "#475569",
+                    borderRadius: 11,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    padding: 12,
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  data-tour="payment-confirm"
+                  onClick={handleSubmitOrder}
+                  disabled={submitting}
+                  className={`press-pay flex-1 hover:bg-blue-800 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 ${
+                    submitting ? "loading-pulse" : ""
+                  }`}
+                  style={{
+                    background: "#1e3a5f",
+                    borderRadius: 11,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    padding: 12,
+                  }}
+                >
+                  {submitting ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  {submitting ? "Memproses..." : "Konfirmasi Bayar"}
                 </button>
               </div>
             </div>
@@ -899,7 +1149,7 @@ function CashierPage() {
               </div>
               <button
                 data-tour="pay-button"
-                onClick={handleSubmitOrder}
+                onClick={handleOpenConfirmation}
                 disabled={submitting}
                 className={`press-pay w-full hover:bg-blue-800 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 ${
                   submitting ? "loading-pulse" : ""
