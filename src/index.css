@@ -165,13 +165,23 @@ body {
     border-bottom-width: 0.5px;
 }
 
-/* Smooth, subtle interactions everywhere */
+/* Smooth, subtle interactions everywhere.
+   Enumerated rather than `all`: `all` also transitions layout properties
+   (padding, width, font-size), so every hover or state flip on a control
+   animated a reflow. These six are what the design actually changes, and each
+   is paint- or composite-only work. */
 button,
 a,
 select,
 input,
 [role="button"] {
-    transition: all 150ms var(--ease-out-apple);
+    transition:
+        background-color 150ms var(--ease-out-apple),
+        border-color 150ms var(--ease-out-apple),
+        color 150ms var(--ease-out-apple),
+        box-shadow 150ms var(--ease-out-apple),
+        opacity 150ms var(--ease-out-apple),
+        transform 150ms var(--ease-out-apple);
 }
 
 /* ───── Batik utilities (kept for backward compat — neutralized) ───── */
@@ -283,10 +293,12 @@ input,
     }
 }
 /* Stagger children: set --i on each item, delay = i × 30ms. `both` keeps
-   items invisible during their delay instead of flashing in first. */
+   items invisible during their delay instead of flashing in first.
+   Capped at the 12th item — uncapped, a 60-item menu left the last rows blank
+   for nearly two seconds and kept the compositor busy the whole time. */
 .stagger-item {
     animation: fadeInUp var(--dur-base) var(--ease-out-apple) both;
-    animation-delay: calc(var(--i, 0) * 30ms);
+    animation-delay: calc(min(var(--i, 0), 12) * 30ms);
 }
 /* Dashboard stat cards step 50ms apart per spec. Driven by nth-child so the
    grid container is the only thing that needs the class — the cards
@@ -521,6 +533,35 @@ input,
 .row-collapse {
     overflow: hidden;
     animation: collapseUp var(--dur-base) var(--ease-in-apple) forwards;
+}
+
+/* ───── Low-end devices ─────
+   `low-end` lands on <html> at boot (utils/lowEndMode.js) for cheap tablets.
+   Motion that is feedback survives — a cashier needs to see the row flash and
+   the total change — it just gets shorter. Motion that is decoration (page
+   enter, list stagger) is dropped, as are the two animations that make the
+   browser re-layout on every frame. Nothing here moves an element or changes
+   a colour, so the design is identical; only the cost differs. */
+.low-end {
+    --dur-micro: 100ms;
+    --dur-base: 120ms;
+    --dur-large: 140ms;
+}
+
+.low-end .page-enter,
+.low-end .stagger-item,
+.low-end .stagger-grid > *,
+.low-end .loading-pulse {
+    animation: none;
+}
+
+/* `max-height` animates layout on every frame. Barely noticeable on a laptop,
+   visibly janky on a cheap tablet — so fade instead and let the height snap. */
+.low-end .expand-enter {
+    animation: fadeSwap var(--dur-micro) var(--ease-out-apple);
+}
+.low-end .row-collapse {
+    animation: fadeSwap var(--dur-micro) var(--ease-in-apple) reverse forwards;
 }
 
 /* ───── Accessibility ─────

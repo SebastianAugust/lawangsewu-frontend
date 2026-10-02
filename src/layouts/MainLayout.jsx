@@ -40,6 +40,12 @@ function MainLayout({ children }) {
     { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["owner"] },
   ];
 
+  const visibleLinks = navLinks.filter((link) => link.roles.includes(role));
+
+  // A kasir sees two tabs and has room to spare, so they keep their labels at
+  // every width. Only a longer strip (an owner's seven) has to compact.
+  const compactTabs = visibleLinks.length > 3;
+
   const isActive = (path) => location.pathname === path;
   const initial = (userName || "U").charAt(0).toUpperCase();
 
@@ -81,7 +87,11 @@ function MainLayout({ children }) {
                   LS
                 </span>
               </div>
-              <div className="hidden sm:flex items-baseline gap-1.5">
+              {/* The wordmark is decorative — the LS mark already identifies the
+                  app — so it yields to the tab strip on a narrow tablet. Without
+                  this, a portrait 800px screen still pushed "Dashboard" out of
+                  reach by ~32px. */}
+              <div className="hidden lg:flex items-baseline gap-1.5">
                 <p
                   className="leading-none"
                   style={{ fontSize: 15, fontWeight: 600, color: "#1e293b", letterSpacing: "-0.4px" }}
@@ -118,8 +128,7 @@ function MainLayout({ children }) {
                     "left 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), width 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                 }}
               />
-              {navLinks
-                .filter((link) => link.roles.includes(role))
+              {visibleLinks
                 .map((link) => {
                   const Icon = link.icon;
                   const active = isActive(link.to);
@@ -128,6 +137,7 @@ function MainLayout({ children }) {
                       key={link.to}
                       to={link.to}
                       title={link.label}
+                      aria-label={link.label}
                       ref={(el) => {
                         tabRefs.current[link.to] = el;
                       }}
@@ -152,7 +162,20 @@ function MainLayout({ children }) {
                       }}
                     >
                       <Icon className="w-4 h-4 shrink-0" strokeWidth={2} />
-                      <span className="hidden md:inline">{link.label}</span>
+                      {/* An owner has seven tabs; with every label showing they
+                          need 611px of strip, and below 1280px there is not that
+                          much room — the overflow silently cut "Audit" and
+                          "Dashboard" off the end, with nothing to hint they were
+                          still there. So below xl only the active tab keeps its
+                          label: the strip always fits, you can still read where
+                          you are, and the rest carry title/aria-label. */}
+                      <span
+                        className={
+                          !compactTabs || active ? "inline" : "hidden xl:inline"
+                        }
+                      >
+                        {link.label}
+                      </span>
                     </Link>
                   );
                 })}

@@ -6,14 +6,6 @@ import {
   getWeekRange,
 } from "../api/report";
 import { getBranches } from "../api/branch";
-import {
-  exportDailyPdf,
-  exportDailyXlsx,
-  exportWeeklyPdf,
-  exportWeeklyXlsx,
-  exportMonthlyPdf,
-  exportMonthlyXlsx,
-} from "../api/export";
 import MainLayout from "../layouts/MainLayout";
 import {
   BarChart,
@@ -54,6 +46,30 @@ import {
 
 const COLORS = ["#2563eb", "#0d9488", "#7c3aed", "#0284c7", "#be123c", "#475569"];
 const DAYS_ID = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+// jsPDF, jspdf-autotable and ExcelJS together are the single heaviest thing the
+// app can load, and they only matter the moment someone actually downloads a
+// report. Importing api/export on click keeps all of it — and html2canvas,
+// which jsPDF pulls in — out of the dashboard chunk. Call sites are unchanged;
+// these wrappers keep the same names and arguments, they just resolve later.
+const lazyExport = (name) =>
+  async (...args) => {
+    try {
+      const mod = await import("../api/export");
+      return await mod[name](...args);
+    } catch (err) {
+      // A failed chunk fetch would otherwise look like a dead button.
+      console.error(`Export ${name} gagal:`, err);
+      alert("Gagal menyiapkan file ekspor. Periksa koneksi lalu coba lagi.");
+    }
+  };
+
+const exportDailyPdf = lazyExport("exportDailyPdf");
+const exportDailyXlsx = lazyExport("exportDailyXlsx");
+const exportWeeklyPdf = lazyExport("exportWeeklyPdf");
+const exportWeeklyXlsx = lazyExport("exportWeeklyXlsx");
+const exportMonthlyPdf = lazyExport("exportMonthlyPdf");
+const exportMonthlyXlsx = lazyExport("exportMonthlyXlsx");
 
 function VariantBreakdownGrid({ data, formatRupiah }) {
   if (!data || data.length === 0) {
@@ -417,7 +433,7 @@ function CategoryDonut({ data, formatRupiah }) {
         </div>
       </div>
 
-      <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+      <div data-scroll-reset className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
         {sorted.map((c, i) => {
           const value = Number(c.total_revenue);
           const pct = total > 0 ? (value / total) * 100 : 0;

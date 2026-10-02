@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getAllMenus,
   createMenu,
@@ -7,6 +7,7 @@ import {
   getCategories,
 } from "../api/menu";
 import { BASE_URL } from "../api/axios";
+import { resizeImageFile } from "../utils/imageResize";
 import MainLayout from "../layouts/MainLayout";
 import {
   Plus,
@@ -20,6 +21,221 @@ import {
   Save,
   ImagePlus,
 } from "lucide-react";
+
+// Variant rows in the form are added and removed one at a time, and a new one
+// has no id yet, so it needs a client-side identity to key on. Indexes will not
+// do: removing the first of three rows shifts every key below it, and React
+// then carries focus and the caret into the wrong input. `_key` is stripped
+// before submit — handleSubmit builds the payload field by field.
+let variantKeySeq = 0;
+const nextVariantKey = () => `new-${(variantKeySeq += 1)}`;
+
+// ───── Row components ─────
+// Both are memoised. The add/edit form lives on this same page and fires
+// setForm on every keystroke, which used to re-render every menu row in the
+// list underneath it. Given stable handlers from the parent, a row now only
+// re-renders when its own menu object changes.
+
+const MenuCard = memo(function MenuCard({
+  menu,
+  index,
+  removing,
+  onEdit,
+  onDelete,
+  onToggleAvailable,
+}) {
+  return (
+    <div
+      className={`${removing ? "row-collapse" : "stagger-item"} bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4`}
+      style={{ "--i": index }}
+    >
+      <div className="flex items-start gap-3 mb-3">
+        {menu.image ? (
+          <img
+            src={`${BASE_URL}/storage/${menu.image}`}
+            alt={menu.name}
+            loading="lazy"
+            decoding="async"
+            width={40}
+            height={40}
+            className="w-10 h-10 object-cover rounded-lg border border-black/[0.07] shrink-0"
+          />
+        ) : (
+          <div className="w-10 h-10 bg-[#eef2f7] rounded-lg flex items-center justify-center shrink-0">
+            <UtensilsCrossed className="w-5 h-5 text-[#93a8c4]" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-900 truncate">{menu.name}</p>
+          <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-medium mt-1">
+            <Tag className="w-3 h-3" />
+            {menu.category?.name}
+          </span>
+        </div>
+        <button
+          onClick={() => onToggleAvailable(menu)}
+          className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition shrink-0 ${
+            menu.is_available
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-rose-100 text-rose-700"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              menu.is_available ? "bg-emerald-500" : "bg-rose-500"
+            }`}
+          />
+          {menu.is_available ? "Tersedia" : "Habis"}
+        </button>
+      </div>
+      <div className="bg-stone-50 rounded-xl p-3 mb-3">
+        {menu.variants && menu.variants.length > 0 ? (
+          <div className="space-y-1">
+            {menu.variants.map((v) => (
+              <div
+                key={v.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="font-medium text-slate-700">{v.name}</span>
+                <div className="flex items-center gap-2">
+                  {!v.is_available && (
+                    <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                      HABIS
+                    </span>
+                  )}
+                  <span className="text-slate-700 font-semibold">
+                    Rp {v.price.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center font-display font-bold text-slate-900">
+            Rp {menu.price?.toLocaleString()}
+          </p>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onEdit(menu)}
+          className="flex-1 inline-flex items-center justify-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-2.5 rounded-xl text-sm font-semibold transition"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          Edit
+        </button>
+        <button
+          onClick={() => onDelete(menu.id)}
+          className="flex-1 inline-flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-2.5 rounded-xl text-sm font-semibold transition"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          Hapus
+        </button>
+      </div>
+    </div>
+  );
+});
+
+const MenuTableRow = memo(function MenuTableRow({
+  menu,
+  index,
+  removing,
+  onEdit,
+  onDelete,
+  onToggleAvailable,
+}) {
+  return (
+    <tr
+      className={`${removing ? "row-collapse" : "stagger-item"} border-t border-slate-100 hover:bg-stone-50/50`}
+      style={{ "--i": index }}
+    >
+      <td className="px-5 py-3.5">
+        <div className="flex items-center gap-3">
+          {menu.image ? (
+            <img
+              src={`${BASE_URL}/storage/${menu.image}`}
+              alt={menu.name}
+              loading="lazy"
+              decoding="async"
+              width={40}
+              height={40}
+              className="w-10 h-10 object-cover rounded-lg border border-black/[0.07] shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-[#eef2f7] rounded-lg flex items-center justify-center shrink-0">
+              <UtensilsCrossed className="w-5 h-5 text-[#93a8c4]" />
+            </div>
+          )}
+          <p className="font-semibold text-slate-800">{menu.name}</p>
+        </div>
+      </td>
+      <td className="px-5 py-3.5">
+        <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
+          <Tag className="w-3 h-3" />
+          {menu.category?.name}
+        </span>
+      </td>
+      <td className="px-5 py-3.5">
+        {menu.variants && menu.variants.length > 0 ? (
+          <div className="space-y-0.5">
+            {menu.variants.map((v) => (
+              <p key={v.id} className="text-sm">
+                <span className="font-medium text-slate-700">{v.name}:</span>{" "}
+                <span className="text-slate-600">
+                  Rp {v.price.toLocaleString()}
+                </span>
+                {!v.is_available && (
+                  <span className="ml-1.5 text-[10px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
+                    HABIS
+                  </span>
+                )}
+              </p>
+            ))}
+          </div>
+        ) : (
+          <span className="font-semibold text-slate-800">
+            Rp {menu.price?.toLocaleString()}
+          </span>
+        )}
+      </td>
+      <td className="px-5 py-3.5">
+        <button
+          onClick={() => onToggleAvailable(menu)}
+          className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition ${
+            menu.is_available
+              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              : "bg-rose-100 text-rose-700 hover:bg-rose-200"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              menu.is_available ? "bg-emerald-500" : "bg-rose-500"
+            }`}
+          />
+          {menu.is_available ? "Tersedia" : "Habis"}
+        </button>
+      </td>
+      <td className="px-5 py-3.5">
+        <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={() => onEdit(menu)}
+            className="w-8 h-8 flex items-center justify-center text-amber-600 hover:bg-amber-50 rounded-lg transition"
+            title="Edit"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(menu.id)}
+            className="w-8 h-8 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-lg transition"
+            title="Hapus"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+});
 
 function MenuManagePage() {
   const [menus, setMenus] = useState([]);
@@ -42,14 +258,14 @@ function MenuManagePage() {
   const fileInputRef = useRef(null);
   const formRef = useRef(null);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     getAllMenus().then((res) => setMenus(res.data));
     getCategories().then((res) => setCategories(res.data));
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Revoke any in-memory object URL on unmount to avoid leaks. Tracks the
   // latest preview via a ref so the cleanup runs once with the final value.
@@ -79,7 +295,7 @@ function MenuManagePage() {
     }
   }, [showForm, editingMenu]);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -91,8 +307,16 @@ function MenuManagePage() {
       alert("Ukuran gambar maksimal 2MB.");
       return;
     }
-    revokePreview(form.imagePreview);
-    setForm({ ...form, image: file, imagePreview: URL.createObjectURL(file) });
+    // Shrink to 800px wide at quality 0.8 before it ever reaches the network.
+    // Falls back to the original file if the browser cannot decode it, so the
+    // two checks above remain the only gate on what gets uploaded.
+    const upload = await resizeImageFile(file);
+    revokePreview(previewRef.current);
+    setForm((prev) => ({
+      ...prev,
+      image: upload,
+      imagePreview: URL.createObjectURL(upload),
+    }));
   };
 
   const handleRemoveImage = () => {
@@ -117,7 +341,10 @@ function MenuManagePage() {
   };
 
   const addVariantRow = () => {
-    setForm({ ...form, variants: [...form.variants, { name: "", price: "" }] });
+    setForm({
+      ...form,
+      variants: [...form.variants, { _key: nextVariantKey(), name: "", price: "" }],
+    });
   };
 
   const updateVariantRow = (index, field, value) => {
@@ -161,9 +388,13 @@ function MenuManagePage() {
     }
   };
 
-  const handleEdit = (menu) => {
+  // The three row handlers below are passed down to memoised rows, so they read
+  // the current preview through a ref rather than closing over `form` — that
+  // keeps their identity stable and lets the rows skip re-rendering while the
+  // form above them is being typed into.
+  const handleEdit = useCallback((menu) => {
     const hasVariants = menu.variants && menu.variants.length > 0;
-    revokePreview(form.imagePreview);
+    revokePreview(previewRef.current);
     setEditingMenu(menu);
     setForm({
       category_id: menu.category_id,
@@ -172,6 +403,7 @@ function MenuManagePage() {
       hasVariants: hasVariants,
       variants: hasVariants
         ? menu.variants.map((v) => ({
+            _key: `db-${v.id}`,
             id: v.id,
             name: v.name,
             price: v.price,
@@ -182,34 +414,40 @@ function MenuManagePage() {
       imagePreview: menu.image ? `${BASE_URL}/storage/${menu.image}` : null,
     });
     setShowForm(true);
-  };
+  }, []);
 
-  const handleDelete = async (id) => {
-    if (!confirm("Yakin hapus menu ini?")) return;
-    await deleteMenu(id);
-    // Play the row's exit before refetching, so it collapses instead of
-    // vanishing. Purely visual — the delete already succeeded.
-    setRemovingId(id);
-    setTimeout(() => {
-      setRemovingId(null);
+  const handleDelete = useCallback(
+    async (id) => {
+      if (!confirm("Yakin hapus menu ini?")) return;
+      await deleteMenu(id);
+      // Play the row's exit before refetching, so it collapses instead of
+      // vanishing. Purely visual — the delete already succeeded.
+      setRemovingId(id);
+      setTimeout(() => {
+        setRemovingId(null);
+        loadData();
+      }, 200);
+    },
+    [loadData],
+  );
+
+  const handleToggleAvailable = useCallback(
+    async (menu) => {
+      await updateMenu(menu.id, { is_available: !menu.is_available });
       loadData();
-    }, 200);
-  };
+    },
+    [loadData],
+  );
 
-  const handleToggleAvailable = async (menu) => {
-    await updateMenu(menu.id, { is_available: !menu.is_available });
-    loadData();
-  };
-
-  const filteredMenus = menus.filter((m) => {
-    const matchSearch = searchQuery
-      ? m.name.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    const matchCategory = filterCategory
-      ? m.category_id === parseInt(filterCategory)
-      : true;
-    return matchSearch && matchCategory;
-  });
+  const filteredMenus = useMemo(() => {
+    const needle = searchQuery.trim().toLowerCase();
+    const categoryId = filterCategory ? parseInt(filterCategory) : null;
+    return menus.filter((m) => {
+      const matchSearch = needle ? m.name.toLowerCase().includes(needle) : true;
+      const matchCategory = categoryId ? m.category_id === categoryId : true;
+      return matchSearch && matchCategory;
+    });
+  }, [menus, searchQuery, filterCategory]);
 
   return (
     <MainLayout>
@@ -390,7 +628,7 @@ function MenuManagePage() {
                 </p>
                 <div className="space-y-2">
                   {form.variants.map((variant, index) => (
-                    <div key={index} className="flex gap-2">
+                    <div key={variant._key} className="flex gap-2">
                       <input
                         type="text"
                         placeholder="Nama varian (Paha, Dada, ...)"
@@ -513,91 +751,15 @@ function MenuManagePage() {
       {filteredMenus.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:hidden">
           {filteredMenus.map((menu, i) => (
-            <div
+            <MenuCard
               key={menu.id}
-              className={`${removingId === menu.id ? "row-collapse" : "stagger-item"} bg-white rounded-2xl border border-slate-200/70 shadow-sm p-4`}
-              style={{ "--i": i }}
-            >
-              <div className="flex items-start gap-3 mb-3">
-                {menu.image ? (
-                  <img
-                    src={`${BASE_URL}/storage/${menu.image}`}
-                    alt={menu.name}
-                    className="w-10 h-10 object-cover rounded-lg border border-black/[0.07] shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-[#eef2f7] rounded-lg flex items-center justify-center shrink-0">
-                    <UtensilsCrossed className="w-5 h-5 text-[#93a8c4]" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">{menu.name}</p>
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-medium mt-1">
-                    <Tag className="w-3 h-3" />
-                    {menu.category?.name}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleToggleAvailable(menu)}
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition shrink-0 ${
-                    menu.is_available
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-rose-100 text-rose-700"
-                  }`}
-                >
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      menu.is_available ? "bg-emerald-500" : "bg-rose-500"
-                    }`}
-                  />
-                  {menu.is_available ? "Tersedia" : "Habis"}
-                </button>
-              </div>
-              <div className="bg-stone-50 rounded-xl p-3 mb-3">
-                {menu.variants && menu.variants.length > 0 ? (
-                  <div className="space-y-1">
-                    {menu.variants.map((v) => (
-                      <div
-                        key={v.id}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="font-medium text-slate-700">{v.name}</span>
-                        <div className="flex items-center gap-2">
-                          {!v.is_available && (
-                            <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
-                              HABIS
-                            </span>
-                          )}
-                          <span className="text-slate-700 font-semibold">
-                            Rp {v.price.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center font-display font-bold text-slate-900">
-                    Rp {menu.price?.toLocaleString()}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleEdit(menu)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-2.5 rounded-xl text-sm font-semibold transition"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(menu.id)}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-2.5 rounded-xl text-sm font-semibold transition"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Hapus
-                </button>
-              </div>
-            </div>
+              menu={menu}
+              index={i}
+              removing={removingId === menu.id}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onToggleAvailable={handleToggleAvailable}
+            />
           ))}
         </div>
       )}
@@ -627,94 +789,15 @@ function MenuManagePage() {
             </thead>
             <tbody>
               {filteredMenus.map((menu, i) => (
-                <tr
+                <MenuTableRow
                   key={menu.id}
-                  className={`${removingId === menu.id ? "row-collapse" : "stagger-item"} border-t border-slate-100 hover:bg-stone-50/50`}
-                  style={{ "--i": i }}
-                >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      {menu.image ? (
-                        <img
-                          src={`${BASE_URL}/storage/${menu.image}`}
-                          alt={menu.name}
-                          className="w-10 h-10 object-cover rounded-lg border border-black/[0.07] shrink-0"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-[#eef2f7] rounded-lg flex items-center justify-center shrink-0">
-                          <UtensilsCrossed className="w-5 h-5 text-[#93a8c4]" />
-                        </div>
-                      )}
-                      <p className="font-semibold text-slate-800">{menu.name}</p>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
-                      <Tag className="w-3 h-3" />
-                      {menu.category?.name}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    {menu.variants && menu.variants.length > 0 ? (
-                      <div className="space-y-0.5">
-                        {menu.variants.map((v) => (
-                          <p key={v.id} className="text-sm">
-                            <span className="font-medium text-slate-700">
-                              {v.name}:
-                            </span>{" "}
-                            <span className="text-slate-600">
-                              Rp {v.price.toLocaleString()}
-                            </span>
-                            {!v.is_available && (
-                              <span className="ml-1.5 text-[10px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">
-                                HABIS
-                              </span>
-                            )}
-                          </p>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="font-semibold text-slate-800">
-                        Rp {menu.price?.toLocaleString()}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <button
-                      onClick={() => handleToggleAvailable(menu)}
-                      className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full transition ${
-                        menu.is_available
-                          ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                          : "bg-rose-100 text-rose-700 hover:bg-rose-200"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          menu.is_available ? "bg-emerald-500" : "bg-rose-500"
-                        }`}
-                      />
-                      {menu.is_available ? "Tersedia" : "Habis"}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleEdit(menu)}
-                        className="w-8 h-8 flex items-center justify-center text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(menu.id)}
-                        className="w-8 h-8 flex items-center justify-center text-rose-500 hover:bg-rose-50 rounded-lg transition"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                  menu={menu}
+                  index={i}
+                  removing={removingId === menu.id}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onToggleAvailable={handleToggleAvailable}
+                />
               ))}
             </tbody>
           </table>
